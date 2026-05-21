@@ -1,0 +1,2 @@
+﻿Scan started: 05/18/2026 00:27:24
+Scanning roots: C:\, D:\
