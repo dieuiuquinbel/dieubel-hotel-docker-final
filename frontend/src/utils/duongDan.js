@@ -1,4 +1,5 @@
-﻿export function taoDuongDanDatPhong(roomId) {
+// Chức năng: Tiện ích xử lý đường dẫn trong frontend.
+export function taoDuongDanDatPhong(roomId) {
   return `/booking?roomId=${roomId}`;
 }
 

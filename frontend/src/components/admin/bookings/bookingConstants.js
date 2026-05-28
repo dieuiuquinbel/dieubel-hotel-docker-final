@@ -1,3 +1,4 @@
+// Chức năng: Khai báo màu sắc và hằng số hiển thị cho quản lý đặt phòng.
 // Hằng số giao diện cho màn quản lý đặt phòng.
 // File này chỉ chứa nhãn tab và màu hiển thị, không chứa logic gọi API.
 import {

@@ -1,3 +1,4 @@
+// Chức năng: Cấu hình Axios chung và interceptor token.
 // Cau hinh Axios dung chung cho moi request tu frontend den backend API.
 import axios from 'axios';
 import useKhoXacThuc from '../store/khoXacThuc';

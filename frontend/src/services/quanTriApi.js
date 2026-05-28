@@ -1,3 +1,4 @@
+// Chức năng: Hàm gọi API quản trị khách hàng và vận hành.
 import ketNoiApi from './ketNoiApi';
 
 export async function layTongQuanQuanTriApi() {

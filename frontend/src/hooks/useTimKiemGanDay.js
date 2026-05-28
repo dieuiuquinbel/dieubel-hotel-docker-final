@@ -1,4 +1,5 @@
-﻿import { useState } from 'react';
+// Chức năng: Hook lưu và đọc lịch sử tìm kiếm gần đây.
+import { useState } from 'react';
 import {
   xoaTimKiemGanDay,
   docTimKiemGanDay,

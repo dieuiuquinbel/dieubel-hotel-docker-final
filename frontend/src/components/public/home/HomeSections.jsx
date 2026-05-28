@@ -1,3 +1,4 @@
+// Chức năng: Các section lớn của trang chủ.
 // Các section lớn của trang chủ, tách khỏi file trang để giảm độ dài và tăng khả năng đọc hiểu.
 import ThePhong from '../../rooms/ThePhong';
 import KhungThePhong from '../../rooms/KhungThePhong';
@@ -8,7 +9,6 @@ import {
   BINH_LUAN_POPUP,
   BO_SUU_TAP,
   CAC_SLOT_DANH_GIA,
-  DANH_GIA,
   DIEM_DEN,
   DIEM_TIN_CAY,
   SLIDE_HERO,
@@ -18,10 +18,7 @@ import {
 
 export function HeroTrangChu({
   activeHero,
-  isHeroPaused,
   setIsHeroPaused,
-  showLoginOffer,
-  showHopThoaiVoucher,
   goToHero,
   handleSearch,
 }) {
@@ -197,6 +194,7 @@ export function DanhGiaTinCaySection({ reviewGroup, visibleReviewCount, isReview
                         review={review}
                         isExiting={isReviewExiting}
                         exitDirection={slot % 2 === 0 ? 'left' : 'right'}
+                        slot={slot}
                       />
                     ) : null}
                   </div>
@@ -401,21 +399,6 @@ export function FeaturedRoomsSection({ navigate, isLoading, isError, data }) {
         </div>
       )}
 
-      <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {DANH_GIA.slice(0, 4).map((item) => (
-          <article key={`${item.name}-${item.trip}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-lg font-black text-slate-950">{item.name}</p>
-                <p className="mt-1 text-sm font-bold text-slate-500">{item.trip}</p>
-              </div>
-              <span className="rounded-xl bg-brand-600 px-3 py-1.5 text-sm font-black text-white">{item.score}</span>
-            </div>
-            <p className="mt-3 text-sm font-black text-brand-700">{item.tag}</p>
-            <p className="mt-3 text-sm leading-7 text-slate-600">{item.quote}</p>
-          </article>
-        ))}
-      </div>
     </section>
   );
 }

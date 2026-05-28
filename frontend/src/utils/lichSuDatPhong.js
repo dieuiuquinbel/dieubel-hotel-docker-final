@@ -1,4 +1,5 @@
-﻿import { KHOA_LUU_TRU } from './khoaLuuTru';
+// Chức năng: Tiện ích và hằng số xử lý lịch sử đặt phòng local.
+import { KHOA_LUU_TRU } from './khoaLuuTru';
 
 import { dinhDangNgay } from './dinhDang';
 

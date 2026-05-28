@@ -1,3 +1,4 @@
+// Chức năng: Hook tải và làm mới danh sách đặt phòng của người dùng.
 import { useCallback, useEffect, useState } from 'react';
 import { layDatPhongCuaToiApi } from '../services/datPhongApi';
 

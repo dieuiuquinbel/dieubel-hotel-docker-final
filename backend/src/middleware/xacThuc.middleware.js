@@ -1,3 +1,4 @@
+// Chức năng: Middleware kiểm tra JWT và gắn user vào request.
 // Middleware xác thực JWT.
 // File này đọc access token, nạp user hiện tại và chặn request chưa đăng nhập.
 const jwt = require('jsonwebtoken');

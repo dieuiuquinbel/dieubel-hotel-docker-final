@@ -1,3 +1,4 @@
+// Chức năng: Cấu hình và gửi email thông báo.
 // Module email: cau hinh Nodemailer va ham gui thu dung chung.
 const nodemailer = require('nodemailer');
 

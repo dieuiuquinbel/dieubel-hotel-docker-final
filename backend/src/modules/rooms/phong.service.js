@@ -1,3 +1,4 @@
+// Chức năng: Nghiệp vụ tìm kiếm, xem chi tiết và tạo phòng.
 // Module rooms: truy van danh sach phong, phong noi bat va chi tiet phong.
 const ketNoiDb = require('../../config/coSoDuLieu');
 

@@ -1,3 +1,4 @@
+// Chức năng: Trường nhập liệu dùng lại trong form phòng.
 // Ô form chuẩn cho màn tạo/sửa phòng.
 export default function RoomField({ label, children, className = '' }) {
   return (

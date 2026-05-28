@@ -1,3 +1,4 @@
+// Chức năng: Tạo pool kết nối MySQL dùng chung cho backend.
 // Cấu hình pool kết nối MySQL dùng chung cho toàn bộ backend.
 const mysql = require('mysql2/promise');
 
@@ -7,7 +8,6 @@ const ketNoiDb = mysql.createPool({
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'hotel_booking_db',
-  charset: 'utf8mb4',
   connectTimeout: 5000,
   waitForConnections: true,
   connectionLimit: 10,

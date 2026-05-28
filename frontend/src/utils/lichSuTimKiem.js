@@ -1,4 +1,5 @@
-﻿import { KHOA_LUU_TRU } from './khoaLuuTru';
+// Chức năng: Tiện ích lưu lịch sử tìm kiếm phòng.
+import { KHOA_LUU_TRU } from './khoaLuuTru';
 
 const KHOA_LUU_TIM_KIEM = KHOA_LUU_TRU.recentSearches;
 

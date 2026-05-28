@@ -1,3 +1,4 @@
+// Chức năng: Form thêm phòng mới và upload ảnh phòng.
 // Form tạo phòng mới.
 // Tách riêng để màn quản lý phòng không phải ôm toàn bộ JSX của form.
 import RoomField from './RoomField';

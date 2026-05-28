@@ -1,3 +1,4 @@
+// Chức năng: Nạp môi trường, chuẩn bị admin mặc định và khởi động server.
 // Điểm khởi động của backend.
 // File này nạp biến môi trường, chuẩn bị tài khoản admin mặc định và mở cổng HTTP.
 require('dotenv').config();

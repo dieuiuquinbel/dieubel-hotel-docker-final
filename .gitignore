@@ -11,6 +11,8 @@ frontend/dist/
 
 .vscode/
 .idea/
+.sixth/
+duplicate-scan-report/
 .DS_Store
 Thumbs.db
 

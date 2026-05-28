@@ -1,4 +1,5 @@
-﻿import { KHOA_LUU_TRU } from './khoaLuuTru';
+// Chức năng: Tiện ích lưu lịch sử phòng đã xem.
+import { KHOA_LUU_TRU } from './khoaLuuTru';
 
 const KHOA_PHONG_DA_XEM = KHOA_LUU_TRU.viewedRooms;
 const KHOA_PHONG_YEU_THICH = KHOA_LUU_TRU.favoriteRooms;

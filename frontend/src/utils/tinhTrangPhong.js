@@ -1,4 +1,5 @@
-﻿export function layThongTinTinhTrangPhong(inventoryCount) {
+// Chức năng: Hằng số và nhãn tình trạng phòng.
+export function layThongTinTinhTrangPhong(inventoryCount) {
   const count = Number(inventoryCount) || 0;
 
   if (count <= 0) {

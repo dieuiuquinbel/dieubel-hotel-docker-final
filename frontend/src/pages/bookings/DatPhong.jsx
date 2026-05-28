@@ -1,3 +1,4 @@
+// Chức năng: Trang tạo đơn đặt phòng mới.
 // Trang tao dat phong: chon ngay, so khach, dich vu them va gui yeu cau giu cho.
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';

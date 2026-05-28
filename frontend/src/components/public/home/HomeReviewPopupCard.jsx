@@ -1,7 +1,14 @@
+// Chức năng: Card đánh giá nổi dùng trong trang chủ.
 // Thẻ bình luận chạy trong khối đánh giá động của trang chủ.
-export default function HomeReviewPopupCard({ review, isExiting, exitDirection }) {
+// Bản nâng cấp hỗ trợ staggered animation delay khi biến mất.
+export default function HomeReviewPopupCard({ review, isExiting, exitDirection, slot }) {
   return (
-    <article className={`review-popup-card ${isExiting ? `review-popup-exit-${exitDirection}` : ''}`}>
+    <article
+      className={`review-popup-card ${isExiting ? `review-popup-exit-${exitDirection}` : ''}`}
+      style={{
+        animationDelay: isExiting ? `${slot * 120}ms` : '0ms',
+      }}
+    >
       <div className="flex items-start gap-3">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-xs font-black text-slate-950">
           {review.name.charAt(0)}

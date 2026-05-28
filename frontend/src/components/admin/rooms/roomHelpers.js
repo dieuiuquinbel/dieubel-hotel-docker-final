@@ -1,3 +1,4 @@
+// Chức năng: Hàm lọc và định dạng dữ liệu phòng admin.
 // Helper lọc và hiển thị dữ liệu phòng.
 import { ROOM_TYPES } from './roomConstants';
 

@@ -1,3 +1,4 @@
+// Chức năng: Trang admin quản lý danh sách và tạo phòng.
 // Màn quản lý phòng cho admin.
 // File này điều phối danh sách phòng, bộ lọc và form tạo phòng; phần UI lớn đã được tách ra component riêng.
 import { useEffect, useMemo, useState } from 'react';
@@ -28,7 +29,7 @@ export default function AdminRooms() {
     staleTime: 60 * 1000,
   });
 
-  const rooms = roomsQuery.data?.data || [];
+  const rooms = useMemo(() => roomsQuery.data?.data || [], [roomsQuery.data?.data]);
   const filteredRooms = useMemo(
     () => locPhong({ rooms, query, status, type }),
     [query, rooms, status, type],

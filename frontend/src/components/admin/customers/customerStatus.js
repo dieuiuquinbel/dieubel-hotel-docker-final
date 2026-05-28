@@ -1,3 +1,4 @@
+// Chức năng: Hằng số nhãn và màu trạng thái khách hàng.
 // Hàm ánh xạ trạng thái khách hàng sang nhãn và class hiển thị.
 export function nhanTrangThaiKhach(status) {
   return status === 'active' ? 'Đang hoạt động' : 'Đã khóa';

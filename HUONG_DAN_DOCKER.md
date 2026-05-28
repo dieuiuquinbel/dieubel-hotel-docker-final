@@ -4,6 +4,7 @@
 
 - Cai Docker Desktop.
 - Mo Docker Desktop truoc khi chay lenh.
+- Tai khoan Windows dang chay terminal phai nam trong nhom `docker-users`.
 - Chay lenh tai thu muc goc du an.
 
 ## Chay du an
@@ -69,8 +70,36 @@ docker compose up --build
 ```
 
 Lenh `docker compose down -v` se xoa volume MySQL cua project.
-Neu may khac da tung chay project va thay chu tieng Viet bi loi kieu `riÃªng`,
+Neu may khac da tung chay project va thay chu tieng Viet bi loi kieu `rieng`,
 hay chay lai dung 2 lenh tren de xoa volume cu va nap lai database voi charset UTF-8.
+
+## Loi Docker permission denied
+
+Neu gap loi dang nay:
+
+```text
+permission denied while trying to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine
+```
+
+nghia la Docker Desktop dang chay nhung terminal hien tai khong co quyen truy cap Docker API.
+Mo PowerShell bang quyen Administrator va them tai khoan dang chay lenh vao nhom `docker-users`:
+
+```powershell
+Add-LocalGroupMember -Group "docker-users" -Member "$env:USERDOMAIN\$env:USERNAME"
+```
+
+Neu chay trong moi truong sandbox/Codex Desktop, can them nhom sandbox vao `docker-users`:
+
+```powershell
+Add-LocalGroupMember -Group "docker-users" -Member "DIEU-NGOO\CodexSandboxUsers"
+```
+
+Sau do dang xuat/dang nhap lai Windows hoac khoi dong lai Docker Desktop roi chay:
+
+```powershell
+docker version
+docker compose build
+```
 
 ## File can gui cho nguoi khac
 

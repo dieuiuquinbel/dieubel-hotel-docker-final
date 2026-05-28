@@ -1,34 +1,28 @@
-# Cấu trúc `database`
+# Cau truc `database`
 
-Thư mục này chứa toàn bộ file SQL để dựng schema và nạp dữ liệu mẫu.
+Thu muc nay chua file SQL de tao database va nap du lieu mau cho chuong trinh dat phong khach san.
 
-## Ý nghĩa các file chính
+## File nen dung
 
-- `01_init_schema.sql`  
-  Tạo schema nền ban đầu.
+- `final_database.sql`
+  - File SQL final, doc lap.
+  - Co the chay tren database trong hoac khi muon reset sach du lieu demo.
+  - Da gom `CREATE DATABASE`, `CREATE TABLE` day du, seed phong, dich vu, voucher va anh phong.
+  - Khong can chay cac file `01` -> `06` truoc do.
 
-- `02_seed_sample_data.sql`  
-  Nạp dữ liệu mẫu ban đầu cho hệ thống.
+## Cac file cu
 
-- `03_add_auth_booking_invoice.sql`  
-  Bổ sung các bảng/cột phục vụ xác thực, booking và hóa đơn.
+- `01_init_schema.sql`
+- `02_seed_sample_data.sql`
+- `03_add_auth_booking_invoice.sql`
+- `03_seed_more_rooms.sql`
+- `05_clean_demo_data.sql`
+- `06_expand_hotel_booking_system.sql`
 
-- `03_seed_more_rooms.sql`  
-  Nạp thêm dữ liệu phòng mẫu.
+Nhung file nay la lich su phat trien/migration trong qua trinh lam chuong trinh. Chung van co gia tri tham khao, nhung voi ban final thi nen uu tien chay `final_database.sql`.
 
-- `05_clean_demo_data.sql`  
-  Dọn và nạp lại một số dữ liệu demo.  
-  Lưu ý: file này hiện vẫn còn dùng một số ảnh web ngoài, chưa hoàn toàn độc lập với mạng.
+## Cach chay
 
-- `06_expand_hotel_booking_system.sql`  
-  Bổ sung các cột và bảng mở rộng cho hệ thống khách sạn.
+Mo MySQL Workbench, chon file `final_database.sql`, sau do chay toan bo script.
 
-## Khuyến nghị
-
-Nếu muốn bản final sạch hơn nữa, nên tách tiếp thành:
-
-- `schema/`
-- `seed/`
-- `migration/`
-
-để người đọc dễ phân biệt file nào tạo bảng, file nào chỉ là dữ liệu mẫu.
+Luu y: file nay co `DROP TABLE IF EXISTS`, nen neu chay tren database dang co du lieu that thi du lieu cu se bi xoa.

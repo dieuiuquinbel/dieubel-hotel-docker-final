@@ -1,3 +1,4 @@
+// Chức năng: Danh sách, bộ lọc và bảng quản lý phòng.
 // Khối danh sách phòng: thống kê, bộ lọc và 2 chế độ hiển thị.
 import { dinhDangTien } from '../../../utils/dinhDang';
 import { layThongTinTinhTrangPhong } from '../../../utils/tinhTrangPhong';

@@ -1,3 +1,4 @@
+// Chức năng: Trang chủ giới thiệu điểm đến, phòng nổi bật và voucher.
 // Trang chủ dành cho khách hàng.
 // File này điều phối trạng thái của hero, voucher, popup và dữ liệu phòng nổi bật; phần section lớn đã được tách ra component riêng.
 import { useEffect, useRef, useState } from 'react';

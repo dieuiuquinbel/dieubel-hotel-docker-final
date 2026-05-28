@@ -1,9 +1,11 @@
+// Chức năng: Trang đăng nhập, đăng ký và xác minh OTP.
 // Trang xac thuc: dang nhap, dang ky tai khoan va xac minh OTP email.
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { dangNhapTaiKhoan, dangKyTaiKhoan, guiLaiOtpEmail, xacMinhOtpEmail } from '../../services/xacThucApi';
 import useKhoXacThuc from '../../store/khoXacThuc';
+import useKhoThongBao from '../../store/khoThongBao';
 import { laQuanTriVien } from '../../utils/phanQuyen';
 
 const ANH_XAC_THUC =
@@ -65,13 +67,11 @@ function DangNhapDangKy() {
   const token = useKhoXacThuc((state) => state.token);
   const user = useKhoXacThuc((state) => state.user);
   const setSession = useKhoXacThuc((state) => state.setSession);
+  const hienThongBao = useKhoThongBao((state) => state.hienThongBao);
 
   const [loginForm, setLoginForm] = useState(FORM_DANG_NHAP_BAN_DAU);
   const [registerForm, setRegisterForm] = useState(FORM_DANG_KY_BAN_DAU);
   const [verification, setVerification] = useState(XAC_MINH_BAN_DAU);
-  const [loginError, setLoginError] = useState('');
-  const [registerError, setRegisterError] = useState('');
-  const [verifyError, setVerifyError] = useState('');
 
   const mode = searchParams.get('mode') === 'register' ? 'register' : 'login';
   const redirectPath = searchParams.get('redirect') || '/';
@@ -89,18 +89,11 @@ function DangNhapDangKy() {
 
   if (token && user) return <Navigate to={resolveRedirectPath(user)} replace />;
 
-  const resetErrors = () => {
-    setLoginError('');
-    setRegisterError('');
-    setVerifyError('');
-  };
-
   const switchMode = (nextMode) => {
     const next = new URLSearchParams(searchParams);
     next.set('mode', nextMode);
     setSearchParams(next, { replace: true });
     setVerification(XAC_MINH_BAN_DAU);
-    resetErrors();
     window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
   };
 
@@ -114,28 +107,26 @@ function DangNhapDangKy() {
 
   const handleLoginSubmit = async (event) => {
     event.preventDefault();
-    setLoginError('');
-
     try {
       const session = await loginMutation.mutateAsync(loginForm);
       setSession(session);
+      hienThongBao('Đăng nhập thành công!', 'success');
       navigate(resolveRedirectPath(session.user), { replace: true });
     } catch (error) {
-      setLoginError(docThongBaoLoi(error, 'Không thể đăng nhập. Vui lòng kiểm tra thông tin.'));
+      hienThongBao(docThongBaoLoi(error, 'Không thể đăng nhập. Vui lòng kiểm tra thông tin.'), 'error');
     }
   };
 
   const handleRegisterSubmit = async (event) => {
     event.preventDefault();
-    setRegisterError('');
 
     if (registerForm.password.length < 6) {
-      setRegisterError('Mật khẩu cần ít nhất 6 ký tự.');
+      hienThongBao('Mật khẩu cần ít nhất 6 ký tự.', 'error');
       return;
     }
 
     if (registerForm.password !== registerForm.confirmPassword) {
-      setRegisterError('Mật khẩu xác nhận chưa khớp.');
+      hienThongBao('Mật khẩu xác nhận chưa khớp.', 'error');
       return;
     }
 
@@ -148,15 +139,15 @@ function DangNhapDangKy() {
         password: registerForm.password,
       });
       setVerification({ email: result.email, otp: '' });
+      hienThongBao('Đăng ký thành công! Mã OTP đã được gửi đến email của bạn.', 'success');
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     } catch (error) {
-      setRegisterError(docThongBaoLoi(error, 'Không thể tạo tài khoản. Vui lòng thử lại.'));
+      hienThongBao(docThongBaoLoi(error, 'Không thể tạo tài khoản. Vui lòng thử lại.'), 'error');
     }
   };
 
   const handleVerifySubmit = async (event) => {
     event.preventDefault();
-    setVerifyError('');
 
     try {
       const session = await verifyMutation.mutateAsync({
@@ -164,19 +155,19 @@ function DangNhapDangKy() {
         otp: verification.otp,
       });
       setSession(session);
+      hienThongBao('Xác minh tài khoản và đăng nhập thành công!', 'success');
       navigate(resolveRedirectPath(session.user), { replace: true });
     } catch (error) {
-      setVerifyError(docThongBaoLoi(error, 'Không thể xác minh OTP. Vui lòng thử lại.'));
+      hienThongBao(docThongBaoLoi(error, 'Không thể xác minh OTP. Vui lòng thử lại.'), 'error');
     }
   };
 
   const handleResendOtp = async () => {
-    setVerifyError('');
-
     try {
       await resendMutation.mutateAsync({ email: verification.email });
+      hienThongBao('Đã gửi lại mã OTP mới qua email!', 'success');
     } catch (error) {
-      setVerifyError(docThongBaoLoi(error, 'Không thể gửi lại OTP.'));
+      hienThongBao(docThongBaoLoi(error, 'Không thể gửi lại mã OTP.'), 'error');
     }
   };
 
@@ -263,7 +254,7 @@ function DangNhapDangKy() {
                     required
                     placeholder="Nhập 6 số"
                   />
-                  {verifyError ? <ThongBao>{verifyError}</ThongBao> : null}
+
                   <div className="flex flex-wrap gap-3">
                     <button
                       type="submit"
@@ -302,7 +293,7 @@ function DangNhapDangKy() {
                     required
                     placeholder="Nhập mật khẩu"
                   />
-                  {loginError ? <ThongBao>{loginError}</ThongBao> : null}
+
                   <button
                     type="submit"
                     disabled={loginMutation.isPending}
@@ -368,11 +359,7 @@ function DangNhapDangKy() {
                     required
                     placeholder="Nhập lại mật khẩu"
                   />
-                  {registerError ? (
-                    <div className="md:col-span-2">
-                      <ThongBao>{registerError}</ThongBao>
-                    </div>
-                  ) : null}
+
                   <button
                     type="submit"
                     disabled={registerMutation.isPending}

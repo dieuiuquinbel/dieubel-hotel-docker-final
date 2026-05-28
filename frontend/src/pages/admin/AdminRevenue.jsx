@@ -1,3 +1,4 @@
+// Chức năng: Trang admin xem báo cáo doanh thu.
 // Trang doanh thu của admin.
 // File này tách rõ số liệu theo khoảng thời gian và số liệu tích lũy toàn hệ thống.
 import { useEffect, useMemo, useState } from 'react';
@@ -53,9 +54,9 @@ export default function AdminRevenue() {
     refresh(range.dateFrom, range.dateTo);
   };
 
-  const period = report?.period || {};
-  const lifetime = report?.lifetime || {};
-  const inventory = report?.inventory || {};
+  const period = useMemo(() => report?.period || {}, [report?.period]);
+  const lifetime = useMemo(() => report?.lifetime || {}, [report?.lifetime]);
+  const inventory = useMemo(() => report?.inventory || {}, [report?.inventory]);
 
   const periodCards = [
     {

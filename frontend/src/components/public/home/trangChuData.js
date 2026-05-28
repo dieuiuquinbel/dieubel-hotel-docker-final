@@ -1,5 +1,5 @@
-// Dữ liệu tĩnh cho trang chủ.
-// Khi cần chuyển sang CMS hoặc bảng dữ liệu riêng, thay ở file này trước.
+// Chức năng: Dữ liệu tĩnh cho nội dung trang chủ.
+// Khi cần chuyển sang CMS hoặc database riêng, ưu tiên sửa file này trước.
 export const SLIDE_HERO = [
   {
     image: 'https://images.unsplash.com/photo-1540541338287-41700207dee6?auto=format&fit=crop&w=1900&q=88',
@@ -107,16 +107,6 @@ export const DIEM_TIN_CAY = [
   { title: 'Theo dõi thuận tiện', detail: 'Khách có thể xem lại đặt phòng, trạng thái thanh toán và thông tin nhận phòng khi cần.' },
 ];
 
-export const DANH_GIA = [
-  { name: 'Minh Anh', trip: 'Kỳ nghỉ Đà Nẵng', score: '9.4', tag: 'Giá minh bạch', quote: 'Tìm phòng nhanh, bộ lọc gọn và thông tin giá dễ hiểu. Tôi đặt suite biển chỉ trong vài phút.' },
-  { name: 'Hoàng Nam', trip: 'Công tác TP. Hồ Chí Minh', score: '9.1', tag: 'Phòng được chọn lọc', quote: 'Trang chi tiết phòng rõ ràng, biết ngay còn phòng hay không và phù hợp cho chuyến công tác.' },
-  { name: 'Linh Chi', trip: 'Gia đình đi Hội An', score: '9.6', tag: 'Bữa sáng & hủy linh hoạt', quote: 'Các gợi ý theo kiểu chuyến đi rất hữu ích, nhất là khi cần phòng family có bữa sáng.' },
-  { name: 'Tuấn Kiệt', trip: 'Cuối tuần Phú Quốc', score: '9.3', tag: 'Quản lý dễ dàng', quote: 'Đặt xong xem lại lịch sử rất tiện, mọi thông tin ngày nhận phòng và dịch vụ đều nằm một chỗ.' },
-  { name: 'Bảo Trân', trip: 'Nghỉ dưỡng Nha Trang', score: '9.2', tag: 'Dịch vụ gợi ý', quote: 'Các gói thêm như đưa đón sân bay và bữa sáng hiển thị rõ, không phải hỏi lại nhân viên.' },
-  { name: 'Quốc Huy', trip: 'Du lịch Đà Lạt', score: '9.0', tag: 'Lọc nhanh', quote: 'Tôi lọc theo ngân sách và sức chứa rất nhanh, danh sách trả về đúng nhu cầu gia đình.' },
-  { name: 'Mai Phương', trip: 'Công tác Hà Nội', score: '9.5', tag: 'Thông tin rõ ràng', quote: 'Giá, ngày nhận phòng và trạng thái phòng được trình bày rõ nên đặt khá yên tâm.' },
-];
-
 export const BINH_LUAN_POPUP = [
   { name: 'Mai Phương', trip: 'Công tác Hà Nội', text: 'Giá rõ ràng, đặt xong xem lại hóa đơn rất tiện.', score: '9.5' },
   { name: 'Quốc Huy', trip: 'Du lịch Đà Lạt', text: 'Lọc theo ngân sách nhanh, danh sách trả về đúng nhu cầu.', score: '9.0' },
@@ -136,5 +126,5 @@ export const SO_DANH_GIA_MOI_LUOT = 4;
 export const CAC_SLOT_DANH_GIA = Array.from({ length: SO_DANH_GIA_MOI_LUOT }, (_, index) => index);
 export const THOI_GIAN_HIEN_TUNG_DANH_GIA = 1000;
 export const THOI_GIAN_BAT_DAU_THOAT_DANH_GIA = 4500;
-export const THOI_GIAN_THOAT_NHOM_DANH_GIA = 780;
+export const THOI_GIAN_THOAT_NHOM_DANH_GIA = 1200;
 export const TONG_NHOM_DANH_GIA = Math.ceil(BINH_LUAN_POPUP.length / SO_DANH_GIA_MOI_LUOT);

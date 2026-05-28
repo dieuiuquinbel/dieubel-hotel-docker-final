@@ -1,3 +1,4 @@
+// Chức năng: Trang lịch sử đơn đã hoàn tất hoặc đã hủy.
 // Trang lich su: tong hop phong da xem, phong yeu thich, don thanh cong va don da huy.
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -11,17 +12,17 @@ import {
   NHAN_TRANG_THAI_THANH_TOAN,
   TRANG_THAI_THANH_TOAN,
   tinhChinhSachHoanTien,
-  luuDanhGiaDatPhong,
 } from '../../utils/lichSuDatPhong';
 import { dinhDangNgay, dinhDangTien } from '../../utils/dinhDang';
 import { resolveMediaUrl } from '../../utils/media';
 import { xoaPhongDaXem, docPhongYeuThich, docPhongDaXem } from '../../utils/lichSuXemPhong';
 import { useDatPhongCuaToi } from '../../hooks/useDatPhongCuaToi';
-import { taoYeuCauHoanTienApi } from '../../services/datPhongApi';
+import { taoYeuCauHoanTienApi, taoDanhGiaDatPhongApi } from '../../services/datPhongApi';
 
 const TAB_LICH_SU = [
   { key: 'viewed', label: 'Phòng đã xem' },
   { key: 'favorites', label: 'Phòng đã lưu' },
+  { key: 'paid_bookings', label: 'Thanh toán thành công' },
   { key: 'completed', label: 'Đặt phòng thành công' },
   { key: 'cancelled', label: 'Lịch sử hủy chỗ' },
 ];
@@ -220,8 +221,11 @@ function LichSu() {
   const { bookings, refresh: refreshBookings } = useDatPhongCuaToi(user);
   const viewedRooms = docPhongDaXem();
   const favoriteRooms = docPhongYeuThich();
+  const paidBookings = bookings.filter((booking) =>
+    [TRANG_THAI_DAT_PHONG.CONFIRMED, TRANG_THAI_DAT_PHONG.CHECKED_IN].includes(booking.bookingStatus),
+  );
   const completedBookings = bookings.filter((booking) =>
-    [TRANG_THAI_DAT_PHONG.CONFIRMED, TRANG_THAI_DAT_PHONG.CHECKED_IN, TRANG_THAI_DAT_PHONG.CHECKED_OUT].includes(booking.bookingStatus),
+    booking.bookingStatus === TRANG_THAI_DAT_PHONG.CHECKED_OUT,
   );
   const cancelledBookings = bookings.filter((booking) =>
     [TRANG_THAI_DAT_PHONG.CANCELLED, TRANG_THAI_DAT_PHONG.NO_SHOW].includes(booking.bookingStatus),
@@ -236,9 +240,19 @@ function LichSu() {
       [bookingId]: typeof forcedValue === 'boolean' ? forcedValue : !current[bookingId],
     }));
   };
-  const submitReview = (booking) => {
-    luuDanhGiaDatPhong({ booking, ...(reviewByBooking[booking.id] || { rating: 5, content: '' }) });
-    refresh();
+  const submitReview = async (booking) => {
+    const draft = reviewByBooking[booking.id] || { rating: 5, content: '' };
+    try {
+      await taoDanhGiaDatPhongApi(booking.id, {
+        rating: Number(draft.rating || 5),
+        content: String(draft.content || '').trim(),
+      });
+      setNotice('Cảm ơn bạn! Đánh giá phòng đã được lưu trữ thành công vào hệ thống.');
+      refresh();
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Không thể gửi đánh giá phòng.';
+      setNotice(message);
+    }
   };
   const submitRefundRequest = async (booking) => {
     const draft = refundByBooking[booking.id] || {};
@@ -278,6 +292,28 @@ function LichSu() {
       ) : <BangTrong title="Chưa có phòng đã lưu" description="Nhấn nút yêu thích ở trang chi tiết hoặc thẻ khách sạn để lưu lại." />;
     }
 
+    if (activeTab === 'paid_bookings') {
+      return paidBookings.length ? (
+        <div className="mt-5 grid gap-5">
+          {paidBookings.map((booking) => (
+            <TheLichSuDatPhong
+              key={`paid-${booking.id}`}
+              booking={booking}
+              user={user}
+              reviewDraft={reviewByBooking[booking.id]}
+              refundDraft={refundByBooking[booking.id]}
+              refundOpen={Boolean(refundOpenByBooking[booking.id])}
+              onReviewChange={updateReviewDraft}
+              onSubmitReview={submitReview}
+              onRefundChange={updateRefundDraft}
+              onRefundToggle={toggleRefundForm}
+              onRefundSubmit={submitRefundRequest}
+            />
+          ))}
+        </div>
+      ) : <BangTrong title="Chưa có chuyến đi nào đang hoạt động" description="Các đơn đã thanh toán/cọc thành công và đang chuẩn bị đi hoặc đang ở phòng sẽ được hiển thị tại đây." />;
+    }
+
     if (activeTab === 'completed') {
       return completedBookings.length ? (
         <div className="mt-5 grid gap-5">
@@ -297,7 +333,7 @@ function LichSu() {
             />
           ))}
         </div>
-      ) : <BangTrong title="Chưa có lịch sử đặt phòng thành công" description="Các đơn đã thanh toán/cọc hoặc đã trả phòng sẽ được lưu ở đây." />;
+      ) : <BangTrong title="Chưa có chuyến đi nào hoàn thành" description="Chỉ các đơn đã hoàn thành đầy đủ 5/5 giai đoạn và trả phòng xong sẽ được lưu trữ ở đây." />;
     }
 
     if (activeTab === 'cancelled') {

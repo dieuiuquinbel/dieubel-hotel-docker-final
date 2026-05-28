@@ -1,3 +1,4 @@
+// Chức năng: Hằng số form, loại phòng và tiện nghi cho quản lý phòng.
 // Hằng số dùng chung cho màn quản lý phòng.
 export const ROOM_TYPES = {
   standard: 'Tiêu chuẩn',

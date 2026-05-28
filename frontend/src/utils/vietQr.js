@@ -1,4 +1,5 @@
-﻿const CAU_HINH_VIETQR = {
+// Chức năng: Tiện ích tạo mã thanh toán và ảnh VietQR.
+const CAU_HINH_VIETQR = {
   bankId: import.meta.env.VITE_VIETQR_BANK_ID || '',
   accountNo: import.meta.env.VITE_VIETQR_ACCOUNT_NO || '',
   accountName: import.meta.env.VITE_VIETQR_ACCOUNT_NAME || '',

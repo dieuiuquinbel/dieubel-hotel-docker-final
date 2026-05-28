@@ -1,7 +1,13 @@
-﻿import ketNoiApi from './ketNoiApi';
+// Chức năng: Hàm gọi API đặt phòng, thanh toán và báo cáo.
+import ketNoiApi from './ketNoiApi';
 
 export async function taoDatPhong(payload) {
   const response = await ketNoiApi.post('/bookings', payload);
+  return response.data.data;
+}
+
+export async function taoDanhGiaDatPhongApi(bookingId, { rating, content }) {
+  const response = await ketNoiApi.post(`/bookings/${bookingId}/reviews`, { rating, content });
   return response.data.data;
 }
 

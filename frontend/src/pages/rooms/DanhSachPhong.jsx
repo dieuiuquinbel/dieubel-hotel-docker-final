@@ -1,3 +1,4 @@
+// Chức năng: Trang danh sách phòng, lọc và sắp xếp kết quả.
 // Trang danh sach phong: hien thi ket qua tim kiem, bo loc va sap xep phong.
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -6,6 +7,7 @@ import TheBoLocDangDung from '../../components/rooms/TheBoLocDangDung';
 import ThePhong from '../../components/rooms/ThePhong';
 import KhungThePhong from '../../components/rooms/KhungThePhong';
 import ThanhTimKiem from '../../components/search/ThanhTimKiem';
+import BoLocBenTrai from '../../components/search/BoLocBenTrai';
 import BangMoiThanhVien from '../../components/layout/BangMoiThanhVien';
 import useTimKiemGanDay from '../../hooks/useTimKiemGanDay';
 import { layPhongNoiBat, layDanhSachPhong } from '../../services/phongApi';
@@ -130,7 +132,17 @@ function DanhSachPhong() {
     });
   };
 
-  const handleTruongChange = (field, value) => updateParams({ [field]: value });
+  const handleTruongChange = (patchOrField, value) => {
+    if (typeof patchOrField === 'object' && patchOrField !== null) {
+      updateParams(patchOrField);
+      return;
+    }
+    if (patchOrField === 'roomTypes') {
+      updateParams({ roomType: value });
+      return;
+    }
+    updateParams({ [patchOrField]: value });
+  };
   const handleRemoveChip = (chip) => {
     if (chip.type === 'array') {
       const values = chip.field === 'roomType' ? roomTypes : amenities;
@@ -177,7 +189,7 @@ function DanhSachPhong() {
 
   return (
     <main className="search-page-bg flex-1">
-      <section className="border-b border-sky-100 bg-white/90 backdrop-blur">
+      <section className="sticky top-0 z-30 border-b border-sky-100 bg-white/95 backdrop-blur shadow-sm">
         <div className="mx-auto max-w-7xl px-4 py-9 sm:px-6">
           <div className="mb-6">
             <span className="eyebrow">Tìm kiếm khách sạn</span>
@@ -192,7 +204,7 @@ function DanhSachPhong() {
           <ThanhTimKiem
             key={queryString}
             compact
-            showAdvanced
+            showAdvanced={false}
             defaultValues={{
               city: filters.city,
               checkIn: filters.checkIn,
@@ -219,9 +231,17 @@ function DanhSachPhong() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="grid items-start gap-8 lg:grid-cols-[280px_1fr]">
+          {/* Sidebar */}
+          <aside className="hidden lg:block sticky top-32 h-[calc(100vh-140px)] overflow-y-auto custom-scrollbar pr-2">
+            <BoLocBenTrai filters={filters} onChange={handleTruongChange} />
+          </aside>
+
+          {/* Main Content */}
           <div>
-            <p className="text-sm font-bold text-brand-700">Kết quả tìm kiếm</p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-brand-700">Kết quả tìm kiếm</p>
             <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-950">
               {filters.city || 'Tất cả điểm đến'}
             </h2>
@@ -352,6 +372,8 @@ function DanhSachPhong() {
             </section>
 
             <BangMoiThanhVien className={viewMode === 'vertical' ? 'xl:col-span-2' : ''} />
+          </div>
+        </div>
         </div>
       </section>
     </main>

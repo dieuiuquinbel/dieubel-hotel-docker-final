@@ -1,4 +1,5 @@
-﻿const PHIEN_BAN_DU_LIEU_DEMO = '2026_05_06_clean';
+// Chức năng: Khai báo khóa localStorage/sessionStorage dùng chung.
+const PHIEN_BAN_DU_LIEU_DEMO = '2026_05_06_clean';
 
 export const KHOA_LUU_TRU = {
   bookings: `dieubel_my_bookings_${PHIEN_BAN_DU_LIEU_DEMO}`,

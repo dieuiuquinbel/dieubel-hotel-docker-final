@@ -1,4 +1,5 @@
-﻿function KhungThePhong({ compact = false }) {
+// Chức năng: Skeleton loading cho card phòng.
+function KhungThePhong({ compact = false }) {
   if (compact) {
     return (
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">

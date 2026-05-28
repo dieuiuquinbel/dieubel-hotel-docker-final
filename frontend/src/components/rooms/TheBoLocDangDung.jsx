@@ -1,4 +1,5 @@
-﻿function TheBoLocDangDung({ chips, onRemove, onReset }) {
+// Chức năng: Hiển thị các bộ lọc phòng đang áp dụng.
+function TheBoLocDangDung({ chips, onRemove, onReset }) {
   if (chips.length === 0) return null;
 
   return (

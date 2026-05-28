@@ -1,3 +1,4 @@
+// Chức năng: Hàm tính toán số liệu hiển thị cho dashboard admin.
 // Helper tính toán cho trang tổng quan admin.
 export function tinhTongPhongTheoDoi(stats = {}) {
   const availableRooms = Number(stats.availableRooms || 0);

@@ -1,69 +1,58 @@
-# Cấu trúc `frontend/src`
+# C?u tr?c frontend/src
 
-Thư mục này là toàn bộ mã nguồn React.
+Th? m?c n?y ch?a to?n b? m? ngu?n React c?a frontend.
 
-## Các nhóm chính
+## Nh?m ch?nh
 
-### `app/`
+### app/
 
-Chứa bộ điều phối chính của frontend.
+- `UngDung.jsx`: khai b?o route, React Query, layout chung, route b?o v? v? th?ng b?o to?n c?c.
 
-- `UngDung.jsx`: nơi khai báo route, gắn layout khách hàng/admin, đồng bộ phiên đăng nhập.
+### components/
 
-### `components/`
+- `admin/`: component d?ng cho khu v?c qu?n tr?.
+- `auth/`: component b?o v? route ??ng nh?p/quy?n.
+- `bookings/`: component ph?c v? lu?ng ??t ph?ng ph?a kh?ch.
+- `chatbot/`: chatbot h? tr? ??t ph?ng.
+  - `ChatbotNoi.jsx`: component giao di?n, tr?ng th?i m?/??ng, nh?p tin nh?n.
+  - `chatbotLogic.js`: d? li?u c?u tr? l?i, ph?n t?ch c?u h?i v? g?i ? ph?ng.
+- `layout/`: header, footer, modal chung, toast to?n c?c.
+- `public/home/`: section trang ch?, d? li?u t?nh v? popup ??nh gi?.
+- `rooms/`: card ph?ng, khung danh s?ch, b? l?c ?ang d?ng.
+- `search/`: thanh t?m ki?m v? b? l?c ph?ng.
+  - `ThanhTimKiem.jsx`: component UI v? state t??ng t?c.
+  - `searchOptions.js`: danh s?ch ?i?m ??n, lo?i ph?ng, ti?n nghi, kho?ng gi? v? form m?c ??nh.
 
-Chứa các khối giao diện dùng lại.
+### pages/
 
-- `admin/`: component dùng riêng cho khu vực quản trị.
-  - `bookings/`: hàng đợi đơn, panel chi tiết, helper đặt phòng.
-  - `customers/`: danh sách khách, form tạo khách, panel chi tiết.
-  - `rooms/`: danh sách phòng, form tạo phòng, helper kho phòng.
-- `auth/`: chặn route hoặc hỗ trợ đăng nhập.
-- `chatbot/`: chatbot nội bộ.
-- `layout/`: header, footer, khung chung.
-- `public/home/`: section lớn và dữ liệu tĩnh của trang chủ.
-- `rooms/`: card phòng, bộ lọc đang dùng.
-- `search/`: thanh tìm kiếm và bộ lọc tìm phòng.
+- `public/`: trang c?ng khai.
+- `rooms/`: danh s?ch ph?ng v? chi ti?t ph?ng.
+- `bookings/`: t?o ??n v? xem ??n c?a t?i.
+- `account/`: t?i kho?n, l?ch s?, ?i?m th??ng.
+- `auth/`: ??ng nh?p, ??ng k?, OTP.
+- `admin/`: c?c m?n h?nh qu?n tr?.
 
-### `pages/`
+### services/
 
-Chứa màn hình hoàn chỉnh theo từng khu vực.
+C?c file g?i API backend b?ng Axios. Quy ??c: service ch? g?i/nh?n d? li?u, kh?ng ch?a layout.
 
-- `public/`: trang công khai.
-- `rooms/`: danh sách phòng, chi tiết phòng.
-- `bookings/`: tạo đơn, xem đơn của tôi.
-- `account/`: tài khoản, lịch sử.
-- `auth/`: đăng nhập, đăng ký, OTP.
-- `admin/`: giao diện quản trị.
+### store/
 
-### `services/`
+- `khoXacThuc.js`: l?u user/token.
+- `khoThongBao.js`: l?u tr?ng th?i toast to?n c?c.
 
-Chứa các hàm gọi API.  
-Quy ước: mỗi file chỉ chuyên giao tiếp với backend, không chứa layout.
+### hooks/
 
-### `store/`
+Custom hook t?i s? d?ng logic l?y d? li?u ho?c ??ng b? localStorage.
 
-Chứa state chung của frontend.
+### utils/
 
-- `khoXacThuc.js`: lưu token và thông tin user.
+H?m ti?n ?ch ??nh d?ng ti?n/ng?y, ph?n quy?n, localStorage, media, VietQR v? tr?ng th?i ph?ng.
 
-### `utils/`
+## Nguy?n t?c s?p x?p
 
-Chứa hàm tiện ích:
+- Component l?n ch? gi? ph?n render/state ch?nh.
+- D? li?u t?nh ho?c danh s?ch option ??t c?nh component trong file `*Options.js` ho?c `*Data.js`.
+- Logic thu?n, kh?ng ph? thu?c JSX, n?n t?ch sang file `*Helpers.js` ho?c `*Logic.js`.
+- API ??t trong `services/`, state d?ng chung ??t trong `store/`.
 
-- định dạng ngày, tiền,
-- ánh xạ trạng thái,
-- xử lý local storage,
-- dựng QR,
-- xử lý media local.
-
-## Gợi ý đọc code
-
-Nếu cần hiểu frontend từ đầu:
-
-1. `main.jsx`
-2. `app/UngDung.jsx`
-3. `pages/admin/*` hoặc `pages/public/*` tùy khu vực cần tìm
-4. `components/admin/*` hoặc `components/public/home/*` nếu page đã được tách nhỏ
-5. `services/*`
-6. `utils/*`

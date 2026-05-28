@@ -11,9 +11,6 @@
   Màn hình quản lý đơn đặt phòng: hàng đợi xử lý, check-in/check-out, hủy/hoàn tiền.  
   File này nay chỉ còn điều phối dữ liệu; phần UI lớn đã tách sang `components/admin/bookings/`.
 
-- `QuanLyDatPhong-TienIch.jsx`  
-  Các hàm hoặc thành phần phụ trợ riêng cho trang quản lý đặt phòng.
-
 - `AdminRooms.jsx`  
   Quản lý phòng: xem danh sách phòng, lọc kho và thêm phòng mới.  
   File này nay chỉ còn điều phối dữ liệu; phần UI lớn đã tách sang `components/admin/rooms/`.

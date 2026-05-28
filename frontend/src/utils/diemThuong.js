@@ -1,4 +1,5 @@
-﻿import { KHOA_LUU_TRU } from './khoaLuuTru';
+// Chức năng: Tiện ích điểm thưởng, đổi quà và kiểm tra voucher.
+import { KHOA_LUU_TRU } from './khoaLuuTru';
 
 const KHOA_DIEM_THUONG = KHOA_LUU_TRU.rewardPoints;
 const KHOA_QUA_DA_DOI = KHOA_LUU_TRU.redeemedRewards;

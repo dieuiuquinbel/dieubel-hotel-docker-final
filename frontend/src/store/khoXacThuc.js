@@ -1,3 +1,4 @@
+// Chức năng: Store Zustand lưu phiên đăng nhập và user.
 // Kho trang thai dang nhap: luu user/token va phuc hoi phien bang localStorage.
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';

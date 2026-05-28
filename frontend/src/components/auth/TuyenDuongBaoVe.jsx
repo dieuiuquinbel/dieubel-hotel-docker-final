@@ -1,3 +1,4 @@
+// Chức năng: Route guard kiểm tra đăng nhập và quyền admin.
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import useKhoXacThuc from '../../store/khoXacThuc';
 import { taoDuongDanDangNhapChuyenHuong } from '../../utils/duongDan';

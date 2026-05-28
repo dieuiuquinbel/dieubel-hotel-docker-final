@@ -1,5 +1,3 @@
-SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 INSERT INTO rooms (
     hotel_name,
     room_name,

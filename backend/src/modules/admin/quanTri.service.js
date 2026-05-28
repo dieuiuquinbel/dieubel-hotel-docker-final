@@ -1,8 +1,8 @@
-// Nghiệp vụ quản trị tổng quát.
+// Chức năng: Nghiệp vụ quản trị khách hàng và dashboard tổng quan.
 // File này xử lý tổng quan admin, danh sách khách hàng và các thao tác tạo/sửa/xóa/khóa tài khoản khách.
-const bcrypt = require('bcryptjs');
-const ketNoiDb = require('../../config/coSoDuLieu');
-const { damBaoCauTrucVanHanh } = require('../system/cauTrucVanHanh.service');
+const bcrypt = require("bcryptjs");
+const ketNoiDb = require("../../config/coSoDuLieu");
+const { damBaoCauTrucVanHanh } = require("../system/cauTrucVanHanh.service");
 
 function taoLoi(status, message) {
   const error = new Error(message);
@@ -10,11 +10,11 @@ function taoLoi(status, message) {
   return error;
 }
 
-function chuanHoaEmail(email = '') {
+function chuanHoaEmail(email = "") {
   return String(email).trim().toLowerCase();
 }
 
-function chuanHoaTenDangNhap(username = '') {
+function chuanHoaTenDangNhap(username = "") {
   return String(username).trim().toLowerCase();
 }
 
@@ -93,13 +93,17 @@ async function layTongQuanQuanTri() {
       pendingBookings: Number(bookingStats.pending_bookings || 0),
       confirmedBookings: Number(bookingStats.confirmed_bookings || 0),
       checkedInBookings: Number(bookingStats.checked_in_bookings || 0),
-      cancelRequestedBookings: Number(bookingStats.cancel_requested_bookings || 0),
+      cancelRequestedBookings: Number(
+        bookingStats.cancel_requested_bookings || 0,
+      ),
       cancelledBookings: Number(bookingStats.cancelled_bookings || 0),
       arrivalsToday: Number(bookingStats.arrivals_today || 0),
       pendingRooms: Number(bookingStats.pending_rooms || 0),
       confirmedRooms: Number(bookingStats.confirmed_rooms || 0),
       checkedInRooms: Number(bookingStats.checked_in_rooms || 0),
-      reservedRooms: Number(bookingStats.pending_rooms || 0) + Number(bookingStats.confirmed_rooms || 0),
+      reservedRooms:
+        Number(bookingStats.pending_rooms || 0) +
+        Number(bookingStats.confirmed_rooms || 0),
       paidRevenue: Number(bookingStats.paid_revenue || 0),
       receivableAmount: Number(bookingStats.receivable_amount || 0),
       totalCustomers: Number(customerStats.total_customers || 0),
@@ -117,29 +121,39 @@ async function layTongQuanQuanTri() {
   };
 }
 
-async function layDanhSachKhachHang({ search = '', status = '', role = 'customer' } = {}) {
+async function layDanhSachKhachHang({
+  search = "",
+  status = "",
+  role = "customer",
+} = {}) {
   await damBaoCauTrucVanHanh();
 
   const conditions = [];
   const values = [];
 
-  if (role !== 'all') {
-    conditions.push('u.role = ?');
+  if (role !== "all") {
+    conditions.push("u.role = ?");
     values.push(role);
   }
 
-  if (status && status !== 'all') {
-    conditions.push('u.status = ?');
+  if (status && status !== "all") {
+    conditions.push("u.status = ?");
     values.push(status);
   }
 
-  const keyword = String(search || '').trim().toLowerCase();
+  const keyword = String(search || "")
+    .trim()
+    .toLowerCase();
   if (keyword) {
-    conditions.push('(LOWER(u.full_name) LIKE ? OR LOWER(u.username) LIKE ? OR LOWER(u.email) LIKE ? OR u.phone LIKE ?)');
+    conditions.push(
+      "(LOWER(u.full_name) LIKE ? OR LOWER(u.username) LIKE ? OR LOWER(u.email) LIKE ? OR u.phone LIKE ?)",
+    );
     values.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
   }
 
-  const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = conditions.length
+    ? `WHERE ${conditions.join(" AND ")}`
+    : "";
   const [rows] = await ketNoiDb.query(
     `SELECT
        u.id,
@@ -193,7 +207,7 @@ async function layChiTietKhachHang(userId) {
     [userId],
   );
 
-  if (!customers.length) throw taoLoi(404, 'Khong tim thay khach hang.');
+  if (!customers.length) throw taoLoi(404, "Khong tim thay khach hang.");
 
   const [bookings] = await ketNoiDb.query(
     `SELECT
@@ -226,32 +240,36 @@ async function taoKhachHang({ payload, adminId }) {
   await damBaoCauTrucVanHanh();
 
   const username = chuanHoaTenDangNhap(payload.username);
-  const password = String(payload.password || '');
-  const fullName = String(payload.full_name || payload.fullName || payload.display_name || username).trim();
-  const phone = String(payload.phone || '').trim() || null;
-  const status = payload.status === 'inactive' ? 'inactive' : 'active';
-  const emailInput = String(payload.email || '').trim();
-  const email = emailInput ? chuanHoaEmail(emailInput) : taoEmailNoiBo(username);
+  const password = String(payload.password || "");
+  const fullName = String(
+    payload.full_name || payload.fullName || payload.display_name || username,
+  ).trim();
+  const phone = String(payload.phone || "").trim() || null;
+  const status = payload.status === "inactive" ? "inactive" : "active";
+  const emailInput = String(payload.email || "").trim();
+  const email = emailInput
+    ? chuanHoaEmail(emailInput)
+    : taoEmailNoiBo(username);
 
   if (!username || !password) {
-    throw taoLoi(400, 'Vui long nhap username va mat khau.');
+    throw taoLoi(400, "Vui long nhap username va mat khau.");
   }
 
   if (password.length < 6) {
-    throw taoLoi(400, 'Mat khau can it nhat 6 ky tu.');
+    throw taoLoi(400, "Mat khau can it nhat 6 ky tu.");
   }
 
   if (!fullName) {
-    throw taoLoi(400, 'Vui long nhap ten hien thi hoac username.');
+    throw taoLoi(400, "Vui long nhap ten hien thi hoac username.");
   }
 
   const [duplicateRows] = await ketNoiDb.query(
-    'SELECT id FROM users WHERE email = ? OR username = ? LIMIT 1',
+    "SELECT id FROM users WHERE email = ? OR username = ? LIMIT 1",
     [email, username],
   );
 
   if (duplicateRows.length) {
-    throw taoLoi(409, 'Email hoac ten tai khoan da ton tai.');
+    throw taoLoi(409, "Email hoac ten tai khoan da ton tai.");
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
@@ -273,23 +291,23 @@ async function taoKhachHang({ payload, adminId }) {
 async function capNhatKhachHang({ userId, payload, adminId }) {
   await damBaoCauTrucVanHanh();
 
-  const fullName = String(payload.full_name || payload.fullName || '').trim();
-  const phone = String(payload.phone || '').trim() || null;
+  const fullName = String(payload.full_name || payload.fullName || "").trim();
+  const phone = String(payload.phone || "").trim() || null;
   const username = chuanHoaTenDangNhap(payload.username);
   const email = chuanHoaEmail(payload.email);
-  const status = payload.status === 'inactive' ? 'inactive' : 'active';
+  const status = payload.status === "inactive" ? "inactive" : "active";
 
   if (!fullName || !username || !email) {
-    throw taoLoi(400, 'Vui long nhap ten, username va email.');
+    throw taoLoi(400, "Vui long nhap ten, username va email.");
   }
 
   const [duplicateRows] = await ketNoiDb.query(
-    'SELECT id FROM users WHERE (email = ? OR username = ?) AND id <> ? LIMIT 1',
+    "SELECT id FROM users WHERE (email = ? OR username = ?) AND id <> ? LIMIT 1",
     [email, username, userId],
   );
 
   if (duplicateRows.length) {
-    throw taoLoi(409, 'Email hoac ten tai khoan da ton tai.');
+    throw taoLoi(409, "Email hoac ten tai khoan da ton tai.");
   }
 
   const [result] = await ketNoiDb.query(
@@ -304,13 +322,16 @@ async function capNhatKhachHang({ userId, payload, adminId }) {
   );
 
   if (!result.affectedRows) {
-    throw taoLoi(404, 'Khong tim thay khach hang hoac khong duoc sua tai khoan admin.');
+    throw taoLoi(
+      404,
+      "Khong tim thay khach hang hoac khong duoc sua tai khoan admin.",
+    );
   }
 
   await ketNoiDb.query(
     `INSERT INTO admin_audit_logs (admin_id, action_type, target_table, target_id, description)
      VALUES (?, 'update_customer', 'users', ?, ?)`,
-    [adminId, userId, 'Cap nhat thong tin khach hang'],
+    [adminId, userId, "Cap nhat thong tin khach hang"],
   );
 
   return layChiTietKhachHang(userId);
@@ -319,11 +340,17 @@ async function capNhatKhachHang({ userId, payload, adminId }) {
 async function capNhatTrangThaiKhachHang({ userId, status, adminId }) {
   await damBaoCauTrucVanHanh();
 
-  const nextStatus = status === 'inactive' ? 'inactive' : 'active';
-  const [result] = await ketNoiDb.query('UPDATE users SET status = ? WHERE id = ? AND role <> \'admin\'', [nextStatus, userId]);
+  const nextStatus = status === "inactive" ? "inactive" : "active";
+  const [result] = await ketNoiDb.query(
+    "UPDATE users SET status = ? WHERE id = ? AND role <> 'admin'",
+    [nextStatus, userId],
+  );
 
   if (!result.affectedRows) {
-    throw taoLoi(404, 'Không tìm thấy khách hàng hoặc không được khóa tài khoản admin.');
+    throw taoLoi(
+      404,
+      "Không tìm thấy khách hàng hoặc không được khóa tài khoản admin.",
+    );
   }
 
   await ketNoiDb.query(
@@ -338,33 +365,43 @@ async function capNhatTrangThaiKhachHang({ userId, status, adminId }) {
 async function xoaKhachHang({ userId, adminId }) {
   await damBaoCauTrucVanHanh();
 
-  const [[bookingStats]] = await ketNoiDb.query('SELECT COUNT(*) AS total FROM bookings WHERE user_id = ?', [userId]);
+  const [[bookingStats]] = await ketNoiDb.query(
+    "SELECT COUNT(*) AS total FROM bookings WHERE user_id = ?",
+    [userId],
+  );
 
   if (Number(bookingStats.total || 0) > 0) {
-    await capNhatTrangThaiKhachHang({ userId, status: 'inactive', adminId });
+    await capNhatTrangThaiKhachHang({ userId, status: "inactive", adminId });
     return {
-      mode: 'soft',
-      message: 'Khách hàng đã có đơn đặt phòng nên hệ thống đã khóa tài khoản thay vì xóa dữ liệu.',
+      mode: "soft",
+      message:
+        "Khách hàng đã có đơn đặt phòng nên hệ thống đã khóa tài khoản thay vì xóa dữ liệu.",
       customers: await layDanhSachKhachHang(),
     };
   }
 
-  await ketNoiDb.query('DELETE FROM email_otps WHERE user_id = ?', [userId]);
+  await ketNoiDb.query("DELETE FROM email_otps WHERE user_id = ?", [userId]);
 
-  const [result] = await ketNoiDb.query('DELETE FROM users WHERE id = ? AND role <> \'admin\'', [userId]);
+  const [result] = await ketNoiDb.query(
+    "DELETE FROM users WHERE id = ? AND role <> 'admin'",
+    [userId],
+  );
   if (!result.affectedRows) {
-    throw taoLoi(404, 'Không tìm thấy khách hàng hoặc không được xóa tài khoản admin.');
+    throw taoLoi(
+      404,
+      "Không tìm thấy khách hàng hoặc không được xóa tài khoản admin.",
+    );
   }
 
   await ketNoiDb.query(
     `INSERT INTO admin_audit_logs (admin_id, action_type, target_table, target_id, description)
      VALUES (?, 'delete_customer', 'users', ?, ?)`,
-    [adminId, userId, 'Xóa khách hàng chưa có đơn đặt phòng'],
+    [adminId, userId, "Xóa khách hàng chưa có đơn đặt phòng"],
   );
 
   return {
-    mode: 'hard',
-    message: 'Đã xóa khách hàng chưa có đơn đặt phòng khỏi MySQL.',
+    mode: "hard",
+    message: "Đã xóa khách hàng chưa có đơn đặt phòng khỏi MySQL.",
     customers: await layDanhSachKhachHang(),
   };
 }

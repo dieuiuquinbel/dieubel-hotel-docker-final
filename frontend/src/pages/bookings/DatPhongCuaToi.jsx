@@ -1,15 +1,30 @@
-// Trang dat cho cua toi: theo doi don, tao QR thanh toan, huy/hoan tien va xem hoa don.
+// Chức năng: Trang khách hàng theo dõi, thanh toán và quản lý đơn.
+// Trang đặt chỗ của tôi.
+// File này cho phép khách theo dõi đơn, tạo QR thanh toán, gửi yêu cầu hủy/hoàn tiền và xem hóa đơn.
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import DatPhongCuaToiQrMinhHoa from './DatPhongCuaToi-QrMinhHoa';
-import DatPhongCuaToiThanhToanVietQr from './DatPhongCuaToi-ThanhToanVietQr';
-import DatPhongCuaToiTienTrinh from './DatPhongCuaToi-TienTrinh';
+import MyBookingsQrMock from '../../components/bookings/my-bookings/MyBookingsQrMock';
+import MyBookingsVietQr from '../../components/bookings/my-bookings/MyBookingsVietQr';
+import MyBookingsProgress from '../../components/bookings/my-bookings/MyBookingsProgress';
+import {
+  MyBookingsEmpty,
+  MyBookingsError,
+  MyBookingsHeader,
+  MyBookingsLoading,
+  MyBookingsTabs,
+} from '../../components/bookings/my-bookings/MyBookingsPageParts';
+import {
+  chuanHoaMaVoucher,
+  locDatPhong,
+  timVoucherTotNhat,
+} from '../../components/bookings/my-bookings/myBookingsHelpers';
 import {
   capNhatTrangThaiDatPhongApi,
   xacNhanThanhToanDatPhongApi,
 } from '../../services/datPhongApi';
 import useKhoXacThuc from '../../store/khoXacThuc';
+import useKhoThongBao from '../../store/khoThongBao';
 import {
   TRANG_THAI_DAT_PHONG,
   NHAN_TRANG_THAI_DAT_PHONG,
@@ -22,21 +37,13 @@ import {
   tinhGiamGiaVoucher,
 } from '../../utils/lichSuDatPhong';
 import { dinhDangNgay, dinhDangTien } from '../../utils/dinhDang';
-import { kiemTraDieuKienVoucher, moTaDieuKienVoucher } from '../../utils/diemThuong';
+import { kiemTraDieuKienVoucher, moTaDieuKienVoucher, danhDauQuaDaDung } from '../../utils/diemThuong';
 import { resolveMediaUrl } from '../../utils/media';
 import { taoAnhVietQr, taoMaThanhToan } from '../../utils/vietQr';
 import { useDatPhongCuaToi } from '../../hooks/useDatPhongCuaToi';
 import { useKhoVoucherCuaToi } from '../../hooks/useKhoVoucherCuaToi';
 import { moHtmlTrongTabMoi } from '../../utils/moFileHtml';
-import { layDanhSachVoucherApi } from '../../services/voucherApi';
 
-const TAB_DAT_PHONG = [
-  { key: 'all', label: 'Tất cả' },
-  { key: TRANG_THAI_THANH_TOAN.UNPAID, label: 'Chờ thanh toán' },
-  { key: TRANG_THAI_THANH_TOAN.DEPOSIT_PAID, label: 'Đã cọc' },
-  { key: TRANG_THAI_THANH_TOAN.PAID, label: 'Đã thanh toán' },
-  { key: TRANG_THAI_DAT_PHONG.CHECKED_IN, label: 'Đang lưu trú' },
-];
 
 function lopTrangThaiThanhToan(paymentStatus) {
   if (paymentStatus === TRANG_THAI_THANH_TOAN.PAID) return 'bg-emerald-50 text-emerald-700';
@@ -50,16 +57,6 @@ function lopTrangThaiDatPhong(bookingStatus) {
   return 'bg-slate-100 text-slate-700';
 }
 
-function locDatPhong(booking, activeTab) {
-  if ([TRANG_THAI_DAT_PHONG.CANCELLED, TRANG_THAI_DAT_PHONG.CHECKED_OUT, TRANG_THAI_DAT_PHONG.NO_SHOW].includes(booking.bookingStatus)) {
-    return false;
-  }
-
-  if (activeTab === 'all') return true;
-  if (activeTab === TRANG_THAI_DAT_PHONG.CHECKED_IN) return booking.bookingStatus === TRANG_THAI_DAT_PHONG.CHECKED_IN;
-  return booking.paymentStatus === activeTab;
-}
-
 function noiDungHanThanhToan(deadline) {
   const diff = new Date(deadline || 0).getTime() - Date.now();
   if (!Number.isFinite(diff) || diff <= 0) return 'Đã quá hạn';
@@ -68,76 +65,32 @@ function noiDungHanThanhToan(deadline) {
   return `Còn ${minutes}:${String(seconds).padStart(2, '0')} để thanh toán`;
 }
 
-function chuanHoaMaVoucher(value = '') {
-  return String(value).trim().toUpperCase();
-}
-
-function gopVoucherKhongTrung(...groups) {
-  const merged = new Map();
-
-  groups.flat().forEach((voucher) => {
-    const code = chuanHoaMaVoucher(voucher?.code);
-    if (!code || merged.has(code)) return;
-    merged.set(code, {
-      ...voucher,
-      code,
-    });
-  });
-
-  return Array.from(merged.values());
-}
-
-function tinhGiaTriToiUuVoucher(totalPrice, voucher) {
-  if (!voucher) return 0;
-  if (!kiemTraDieuKienVoucher(voucher, totalPrice).hopLe) return 0;
-  if (voucher.discountType === 'service') return 0;
-  return tinhGiamGiaVoucher(totalPrice, voucher);
-}
-
-function timVoucherTotNhat(totalPrice, vouchers) {
-  return vouchers.reduce((best, voucher) => {
-    const discount = tinhGiaTriToiUuVoucher(totalPrice, voucher);
-    const bestDiscount = tinhGiaTriToiUuVoucher(totalPrice, best);
-
-    if (discount > bestDiscount) return voucher;
-    return best;
-  }, null);
-}
 
 function DatPhongCuaToi() {
   const user = useKhoXacThuc((state) => state.user);
+  const hienThongBao = useKhoThongBao((state) => state.hienThongBao);
   const [activeTab, setActiveTab] = useState('all');
   const [paymentDraft, setPaymentDraft] = useState(null);
-  const [paymentThongBao, setPaymentThongBao] = useState('');
   const [detailBookingId, setDetailBookingId] = useState(null);
+  const [activeQrCodeToken, setActiveQrCodeToken] = useState(null);
   const [voucherByBooking, setVoucherByBooking] = useState({});
   const [voucherInputByBooking, setVoucherInputByBooking] = useState({});
   const [voucherAutoOffByBooking, setVoucherAutoOffByBooking] = useState({});
-  const [publicVouchers, setPublicVouchers] = useState([]);
   const { bookings, error: bookingsError, isLoading: bookingsLoading, refresh, setRemoteBookings } = useDatPhongCuaToi(user);
   const [redeemedRewards] = useKhoVoucherCuaToi(user);
   const availableRewards = redeemedRewards.filter((reward) => !reward.used);
-  const voucherOptions = gopVoucherKhongTrung(availableRewards, publicVouchers);
+  const voucherOptions = availableRewards;
   const filteredBookings = bookings.filter((booking) => locDatPhong(booking, activeTab));
+  
+  const badges = {
+    unpaid: bookings.filter(b => locDatPhong(b, 'unpaid')).length,
+    deposit: bookings.filter(b => locDatPhong(b, 'deposit')).length,
+    paid: bookings.filter(b => locDatPhong(b, 'paid')).length,
+    active: bookings.filter(b => locDatPhong(b, 'active')).length,
+  };
 
   useEffect(() => {
-    let isMounted = true;
-
-    layDanhSachVoucherApi()
-      .then((data) => {
-        if (isMounted && Array.isArray(data)) setPublicVouchers(data);
-      })
-      .catch(() => {
-        if (isMounted) setPublicVouchers([]);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const options = gopVoucherKhongTrung(redeemedRewards.filter((reward) => !reward.used), publicVouchers);
+    const options = availableRewards;
     if (!options.length || !bookings.length) return;
 
     const nextVoucherByBooking = {};
@@ -158,7 +111,7 @@ function DatPhongCuaToi() {
       setVoucherByBooking((current) => ({ ...nextVoucherByBooking, ...current }));
       setVoucherInputByBooking((current) => ({ ...nextVoucherInputByBooking, ...current }));
     }
-  }, [bookings, publicVouchers, redeemedRewards, voucherAutoOffByBooking, voucherByBooking]);
+  }, [bookings, availableRewards, voucherAutoOffByBooking, voucherByBooking]);
 
   const findVoucherByCode = (code) => {
     const normalizedCode = chuanHoaMaVoucher(code);
@@ -172,19 +125,19 @@ function DatPhongCuaToi() {
       setVoucherByBooking((current) => ({ ...current, [booking.id]: '' }));
       setVoucherAutoOffByBooking((current) => ({ ...current, [booking.id]: true }));
       setPaymentDraft(null);
-      setPaymentThongBao('Đã bỏ mã giảm giá khỏi đơn này.');
+      hienThongBao('Đã bỏ mã giảm giá khỏi đơn này.', 'info');
       return;
     }
 
     const voucher = findVoucherByCode(code);
     if (!voucher) {
-      setPaymentThongBao('Không tìm thấy mã giảm giá này hoặc mã đã hết hạn.');
+      hienThongBao('Không tìm thấy mã giảm giá này hoặc mã đã hết hạn.', 'error');
       return;
     }
 
     const voucherCheck = kiemTraDieuKienVoucher(voucher, booking.totalPrice);
     if (!voucherCheck.hopLe) {
-      setPaymentThongBao(voucherCheck.lyDo);
+      hienThongBao(voucherCheck.lyDo, 'error');
       return;
     }
 
@@ -193,10 +146,11 @@ function DatPhongCuaToi() {
     setVoucherAutoOffByBooking((current) => ({ ...current, [booking.id]: false }));
     setPaymentDraft(null);
     const bestVoucher = timVoucherTotNhat(booking.totalPrice, voucherOptions);
-    setPaymentThongBao(
+    hienThongBao(
       bestVoucher?.code === voucher.code
-        ? `Đã áp ưu đãi tốt nhất ${voucher.code}. Bấm thanh toán để tạo QR theo số tiền sau giảm.`
-        : `Đã áp mã ${voucher.code}. Bấm thanh toán để tạo QR theo số tiền sau giảm.`,
+        ? `Đã áp ưu đãi tốt nhất ${voucher.code}.`
+        : `Đã áp mã giảm giá ${voucher.code}.`,
+      'success'
     );
   };
 
@@ -206,7 +160,7 @@ function DatPhongCuaToi() {
     if (selectedVoucher && !booking.voucherCode) {
       const voucherCheck = kiemTraDieuKienVoucher(selectedVoucher, booking.totalPrice);
       if (!voucherCheck.hopLe) {
-        setPaymentThongBao(voucherCheck.lyDo);
+        hienThongBao(voucherCheck.lyDo, 'error');
         return;
       }
     }
@@ -215,7 +169,7 @@ function DatPhongCuaToi() {
     const previewTotalPrice = Math.max(0, Number(booking.totalPrice || 0) - discountAmount);
     const previewDepositAmount = Math.ceil(previewTotalPrice * 0.1);
     const amount = method === PHUONG_THUC_THANH_TOAN.COUNTER_DEPOSIT ? previewDepositAmount : previewTotalPrice;
-    const paymentCode = taoMaThanhToan(booking.id);
+    const paymentCode = booking.booking_code || taoMaThanhToan(booking.id);
     const paymentQrUrl = taoAnhVietQr({ amount, bookingId: booking.id, paymentMethod: method, paymentCode });
 
     setPaymentDraft({
@@ -226,7 +180,6 @@ function DatPhongCuaToi() {
       paymentQrUrl,
       voucherCode: selectedVoucher?.code || null,
     });
-    setPaymentThongBao('');
   };
 
   const confirmPayment = async (bookingId, method) => {
@@ -239,27 +192,29 @@ function DatPhongCuaToi() {
     if (selectedVoucher && !booking.voucherCode) {
       const voucherCheck = kiemTraDieuKienVoucher(selectedVoucher, booking.totalPrice);
       if (!voucherCheck.hopLe) {
-        setPaymentThongBao(voucherCheck.lyDo);
+        hienThongBao(voucherCheck.lyDo, 'error');
         return;
       }
-
     }
 
-    const paymentCode = draft?.paymentCode || taoMaThanhToan(booking.id);
+    const paymentCode = draft?.paymentCode || booking.booking_code || taoMaThanhToan(booking.id);
     let confirmedBooking = booking;
 
     try {
       const nextBookings = await xacNhanThanhToanDatPhongApi(booking.id, method, paymentCode, selectedVoucher?.code || null);
       setRemoteBookings(nextBookings);
       confirmedBooking = nextBookings.find((item) => item.id === booking.id) || booking;
+      if (selectedVoucher?.code) {
+        danhDauQuaDaDung(selectedVoucher.code);
+      }
     } catch (error) {
-      setPaymentThongBao(error?.response?.data?.message || 'Không xác nhận được thanh toán từ MySQL. Vui lòng kiểm tra backend/database.');
+      hienThongBao(error?.response?.data?.message || 'Không xác nhận được thanh toán từ MySQL. Vui lòng kiểm tra backend/database.', 'error');
       return;
     }
 
     setPaymentDraft(null);
     await refresh();
-    setPaymentThongBao(`Đã xác nhận thanh toán cho ${confirmedBooking.id || paymentCode}.`);
+    hienThongBao(`Đã xác nhận thanh toán thành công cho đơn ${confirmedBooking.booking_code || paymentCode}!`, 'success');
   };
 
   const openInvoice = (booking) => {
@@ -268,56 +223,15 @@ function DatPhongCuaToi() {
 
   return (
     <main className="history-page-bg flex-1">
-      <section className="mx-auto max-w-[1380px] px-4 py-10 sm:px-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <span className="eyebrow">Đặt chỗ của tôi</span>
-            <h1 className="mt-3 text-[28px] font-bold tracking-normal text-[#222222]">Quản lý đặt chỗ và thanh toán</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-              Các phòng vừa giữ chỗ sẽ nằm tại đây để bạn thanh toán online, cọc 10% hoặc hủy giữ chỗ khi không còn nhu cầu.
-            </p>
-          </div>
-          <Link
-            to="/rooms"
-            className="rounded-lg bg-brand-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-brand-700"
-          >
-            Tìm thêm khách sạn
-          </Link>
-        </div>
-
-        <div className="mt-8 flex flex-wrap gap-2 rounded-[14px] border border-[#dddddd] bg-white p-2">
-          {TAB_DAT_PHONG.map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`rounded-lg px-4 py-2.5 text-sm font-medium transition ${
-                activeTab === tab.key ? 'bg-[#222222] text-white' : 'text-[#6a6a6a] hover:bg-[#f7f7f7] hover:text-[#222222]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {paymentThongBao ? (
-          <div className="mt-5 rounded-lg border border-[#dddddd] bg-[#f7f7f7] px-4 py-3 text-sm font-medium text-[#222222]">
-            {paymentThongBao}
-          </div>
-        ) : null}
-
-        {bookingsError ? (
-          <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-            {bookingsError}
-          </div>
-        ) : null}
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
+        <MyBookingsHeader />
+        <MyBookingsTabs activeTab={activeTab} setActiveTab={setActiveTab} badges={badges} />
+        <MyBookingsError message={bookingsError} />
 
         {bookingsLoading ? (
-          <div className="surface-card mt-8 p-8 text-center text-sm font-bold text-slate-500">
-            Đang tải dữ liệu đặt phòng từ MySQL...
-          </div>
+          <MyBookingsLoading />
         ) : filteredBookings.length ? (
-          <div className="mt-6 grid gap-5">
+          <div className="mt-6 grid gap-8">
             {filteredBookings.map((booking) => {
               const isPaying = paymentDraft?.bookingId === booking.id;
               const payNowAmount =
@@ -351,13 +265,14 @@ function DatPhongCuaToi() {
               return (
                 <article
                   key={booking.id}
-                  className="subtle-card grid overflow-hidden 2xl:grid-cols-[minmax(0,1fr)_300px]"
+                  className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md lg:grid-cols-[280px_minmax(0,1fr)]"
                 >
-                  <div className="grid min-w-0 lg:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[240px_minmax(0,1fr)]">
-                    <img src={resolveMediaUrl(booking.image_url)} alt={booking.hotel_name} className="h-56 w-full object-cover lg:h-full" />
+                  <div className="relative h-48 w-full lg:h-full lg:min-h-[280px]">
+                    <img src={resolveMediaUrl(booking.image_url)} alt={booking.hotel_name} className="h-full w-full object-cover" />
+                  </div>
 
-                    <div className="min-w-0 p-5">
-                      <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-col p-6">
+                    <div className="flex flex-wrap items-center gap-2">
                         <span className={`rounded-full px-3 py-1 text-xs font-bold ${lopTrangThaiDatPhong(booking.bookingStatus)}`}>
                           {NHAN_TRANG_THAI_DAT_PHONG[booking.bookingStatus] || booking.bookingStatus}
                         </span>
@@ -376,7 +291,7 @@ function DatPhongCuaToi() {
                       <p className="mt-1 text-sm font-bold text-slate-600">{booking.room_name}</p>
                       <p className="mt-2 text-sm leading-7 text-slate-500">{booking.address}</p>
 
-                      <DatPhongCuaToiTienTrinh booking={booking} />
+                      <MyBookingsProgress booking={booking} />
 
                       <div className="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
                         <div className="rounded-xl bg-slate-50 px-4 py-3">
@@ -405,15 +320,18 @@ function DatPhongCuaToi() {
                       </div>
 
                       {hasCheckInQr ? (
-                        <div className="mt-5 flex flex-wrap items-center gap-4 rounded-[14px] border border-[#dddddd] bg-[#f7f7f7] p-4">
-                          <DatPhongCuaToiQrMinhHoa token={booking.qrToken} />
+                        <div className="mt-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
                           <div>
-                            <p className="text-sm font-black text-emerald-800">QR nhận phòng đã sẵn sàng</p>
-                            <p className="mt-1 text-sm leading-6 text-emerald-700">
-                              Khi đến khách sạn, xuất trình mã này để nhân viên quét check-in.
-                            </p>
-                            <p className="mt-2 break-all text-xs font-bold text-emerald-900">{booking.qrToken}</p>
+                            <p className="text-sm font-black text-emerald-800">Mã QR nhận phòng đã sẵn sàng</p>
+                            <p className="mt-0.5 text-xs font-semibold text-emerald-700">Đưa mã cho lễ tân để nhận phòng.</p>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => setActiveQrCodeToken(booking.qrToken)}
+                            className="flex h-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 px-5 text-xs font-black text-white shadow-sm transition hover:bg-emerald-700"
+                          >
+                            Hiển thị mã QR
+                          </button>
                         </div>
                       ) : null}
 
@@ -482,7 +400,7 @@ function DatPhongCuaToi() {
                                 setVoucherInputByBooking((current) => ({ ...current, [booking.id]: '' }));
                                 setVoucherAutoOffByBooking((current) => ({ ...current, [booking.id]: true }));
                                 setPaymentDraft(null);
-                                setPaymentThongBao('Đã bỏ mã giảm giá khỏi đơn này.');
+                                hienThongBao('Đã bỏ mã giảm giá khỏi đơn này.', 'info');
                               }}
                               className="min-h-10 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-black text-slate-700 transition hover:border-slate-900"
                             >
@@ -504,7 +422,7 @@ function DatPhongCuaToi() {
                       ) : null}
 
                     {isPaying ? (
-                      <div className="mt-5 rounded-[14px] border border-[#dddddd] bg-white p-4">
+                      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 backdrop-blur-md p-4.5 shadow-sm">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
                             <p className="text-sm font-black text-slate-950">
@@ -518,7 +436,7 @@ function DatPhongCuaToi() {
                         </div>
                         <div className="mt-4 grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
                           <div className="md:max-w-[220px]">
-                            <DatPhongCuaToiThanhToanVietQr
+                            <MyBookingsVietQr
                               amount={payNowAmount}
                               bookingId={booking.id}
                               paymentMethod={paymentDraft.method}
@@ -585,142 +503,182 @@ function DatPhongCuaToi() {
                         </button>
                       </div>
                     ) : null}
-                    </div>
-                  </div>
 
-                  <div className="flex min-w-0 flex-col justify-between gap-4 overflow-hidden border-t border-[#dddddd] bg-white p-5 2xl:border-l 2xl:border-t-0">
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">Tổng cuối cùng</p>
-                      <div className="mt-3 grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm">
-                        <div className="flex items-center justify-between gap-3 text-slate-600">
-                          <span>Giá gốc</span>
-                          <span className="font-bold text-slate-900">{dinhDangTien(baseTotalPrice)}</span>
-                        </div>
-                        {hasVoucherPreview ? (
-                          <div className="flex items-start justify-between gap-3 text-slate-600">
-                            <span>Voucher</span>
-                            <span className="grid justify-items-end gap-1 text-right">
-                              {isBestVoucherSelected ? (
-                                <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-black uppercase text-rose-700">Ưu đãi tốt nhất</span>
-                              ) : null}
-                              <span className="max-w-[150px] font-bold text-slate-900">
-                                {activeVoucher.voucherTitle || activeVoucher.title || activeVoucher.voucherCode || activeVoucher.code}
+                    {/* Footer của Thẻ (Gộp TỔNG CUỐI CÙNG và NÚT BẤM) */}
+                    <div className="mt-5 rounded-2xl bg-slate-50 p-4 border border-slate-100 flex flex-col lg:flex-row lg:items-end justify-between gap-5">
+                      <div className="min-w-[200px]">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">Tổng cuối cùng</p>
+                        <div className="mt-3 grid gap-2 text-sm">
+                          <div className="flex items-center justify-between gap-3 text-slate-600">
+                            <span>Giá gốc</span>
+                            <span className="font-bold text-slate-900">{dinhDangTien(baseTotalPrice)}</span>
+                          </div>
+                          {hasVoucherPreview ? (
+                            <div className="flex items-start justify-between gap-3 text-slate-600">
+                              <span>Voucher</span>
+                              <span className="grid justify-items-end gap-1 text-right">
+                                {isBestVoucherSelected ? (
+                                  <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-black uppercase text-rose-700">Ưu đãi tốt nhất</span>
+                                ) : null}
+                                <span className="max-w-[150px] font-bold text-slate-900">
+                                  {activeVoucher.voucherTitle || activeVoucher.title || activeVoucher.voucherCode || activeVoucher.code}
+                                </span>
                               </span>
-                            </span>
+                            </div>
+                          ) : null}
+                          {hasVoucherPreview ? (
+                            <div className="flex items-center justify-between gap-3 text-emerald-700">
+                              <span>{hasMoneyDiscount ? 'Đã giảm' : 'Ưu đãi dịch vụ'}</span>
+                              <span className="font-black">
+                                {hasMoneyDiscount ? `-${dinhDangTien(previewDiscount)}` : 'Đã áp dụng'}
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
+                        <p className="mt-3 text-2xl font-black text-slate-950">{dinhDangTien(previewTotalPrice)}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          Cọc tối thiểu: <span className="font-bold text-slate-700">{dinhDangTien(previewDepositAmount)}</span>
+                        </p>
+                      </div>
+
+                      <div className="flex flex-1 flex-col justify-end gap-2 lg:max-w-[400px]">
+                        {/* Nhóm 1: Thanh toán (Nếu có thể thanh toán) */}
+                        {canPay ? (
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            <button
+                              type="button"
+                              onClick={() => openPayment(booking, PHUONG_THUC_THANH_TOAN.ONLINE_FULL)}
+                              className="flex min-h-12 items-center justify-center rounded-xl bg-brand-600 px-3 py-3.5 text-center text-xs font-black text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98]"
+                            >
+                              Thanh toán toàn bộ
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openPayment(booking, PHUONG_THUC_THANH_TOAN.COUNTER_DEPOSIT)}
+                              className="flex min-h-12 items-center justify-center rounded-xl bg-brand-50 px-3 py-3.5 text-center text-xs font-black text-brand-700 transition hover:bg-brand-100 active:scale-[0.98]"
+                            >
+                              Cọc 10%
+                            </button>
                           </div>
                         ) : null}
-                        {hasVoucherPreview ? (
-                          <div className="flex items-center justify-between gap-3 text-emerald-700">
-                            <span>{hasMoneyDiscount ? 'Đã giảm' : 'Ưu đãi dịch vụ'}</span>
-                            <span className="font-black">
-                              {hasMoneyDiscount ? `-${dinhDangTien(previewDiscount)}` : 'Đã áp dụng'}
-                            </span>
-                          </div>
+
+                        {/* Nhóm 2: Thao tác chung (Action hierarchy) */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <Link
+                            to={`/rooms/${booking.roomId}`}
+                            className="flex min-h-11 items-center justify-center rounded-xl border border-transparent bg-white px-3 py-2 text-center text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                          >
+                            Xem phòng
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setDetailBookingId(booking.id)}
+                            className="flex min-h-11 items-center justify-center rounded-xl border border-transparent bg-white px-3 py-2 text-center text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                          >
+                            Chi tiết / HĐ
+                          </button>
+                          <Link
+                            to={`/me?supportBooking=${booking.id}`}
+                            className="flex min-h-11 items-center justify-center rounded-xl border border-transparent bg-white px-3 py-2 text-center text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                          >
+                            Hỗ trợ
+                          </Link>
+                          {canCustomerConfirmCheckout ? (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const nextBookings = await capNhatTrangThaiDatPhongApi(booking.id, TRANG_THAI_DAT_PHONG.CHECKED_OUT);
+                                  setRemoteBookings(nextBookings);
+                                  hienThongBao('Đã đánh dấu trả phòng thành công!', 'success');
+                                } catch (error) {
+                                  hienThongBao(error?.response?.data?.message || 'Không cập nhật được trả phòng.', 'error');
+                                }
+                                await refresh();
+                              }}
+                              className="flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-3 py-2 text-center text-xs font-black text-white shadow-sm transition hover:bg-slate-800"
+                            >
+                              Trả phòng
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled
+                              className="flex min-h-11 items-center justify-center rounded-xl border border-transparent bg-white/50 text-slate-400 px-3 py-2 text-center text-xs font-bold cursor-not-allowed"
+                            >
+                              Chờ nhận phòng
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Hành động hủy */}
+                        {booking.bookingStatus === TRANG_THAI_DAT_PHONG.HOLDING ? (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const nextBookings = await capNhatTrangThaiDatPhongApi(booking.id, TRANG_THAI_DAT_PHONG.CANCELLED, 'Khách hủy giữ chỗ');
+                                setRemoteBookings(nextBookings);
+                                hienThongBao('Đã hủy giữ chỗ thành công.', 'success');
+                              } catch (error) {
+                                hienThongBao(error?.response?.data?.message || 'Không hủy được đơn hàng.', 'error');
+                              }
+                              await refresh();
+                            }}
+                            className="flex min-h-11 w-full mt-2 items-center justify-center rounded-xl bg-transparent border border-rose-200 px-4 py-2 text-center text-xs font-bold text-rose-600 transition hover:bg-rose-50"
+                          >
+                            Hủy giữ chỗ
+                          </button>
                         ) : null}
                       </div>
-                      <p className="mt-3 text-2xl font-black text-slate-950">{dinhDangTien(previewTotalPrice)}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        Cọc tối thiểu: <span className="font-black text-slate-700">{dinhDangTien(previewDepositAmount)}</span>
-                      </p>
-                    </div>
-
-                    <div className="grid gap-3">
-                      <Link
-                        to={`/rooms/${booking.roomId}`}
-                        className="flex min-h-12 w-full min-w-0 items-center justify-center overflow-hidden rounded-lg border border-[#222222] bg-white px-4 py-3 text-center text-sm font-medium leading-5 text-[#222222] transition hover:bg-[#f7f7f7]"
-                      >
-                        Xem khách sạn
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setDetailBookingId(booking.id)}
-                        className="min-h-12 w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 bg-white px-4 py-3 text-center text-sm font-bold leading-5 text-slate-700 transition hover:border-brand-500 hover:text-brand-700"
-                      >
-                        Chi tiết / hóa đơn
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!canPay}
-                        onClick={() => openPayment(booking, PHUONG_THUC_THANH_TOAN.ONLINE_FULL)}
-                        className="min-h-12 w-full min-w-0 overflow-hidden rounded-lg bg-brand-600 px-4 py-3 text-center text-sm font-medium leading-5 text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-100"
-                      >
-                        Thanh toán toàn bộ
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!canPay}
-                        onClick={() => openPayment(booking, PHUONG_THUC_THANH_TOAN.COUNTER_DEPOSIT)}
-                        className="min-h-12 w-full min-w-0 overflow-hidden rounded-lg border border-[#222222] bg-white px-4 py-3 text-center text-sm font-medium leading-5 text-[#222222] transition hover:bg-[#f7f7f7] disabled:cursor-not-allowed disabled:border-[#dddddd] disabled:text-[#929292]"
-                      >
-                        Cọc 10%
-                      </button>
-                      <button
-                        type="button"
-                        disabled={booking.bookingStatus !== TRANG_THAI_DAT_PHONG.HOLDING}
-                        onClick={async () => {
-                          try {
-                            const nextBookings = await capNhatTrangThaiDatPhongApi(booking.id, TRANG_THAI_DAT_PHONG.CANCELLED, 'Khách hủy giữ chỗ');
-                            setRemoteBookings(nextBookings);
-                          } catch (error) {
-                            setPaymentThongBao(error?.response?.data?.message || 'Không hủy được đơn trên MySQL. Vui lòng kiểm tra backend/database.');
-                            return;
-                          }
-                          await refresh();
-                        }}
-                        className="min-h-12 w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 bg-white px-4 py-3 text-center text-sm font-bold leading-5 text-slate-700 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                      >
-                        Hủy giữ chỗ
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!canCustomerConfirmCheckout}
-                        onClick={async () => {
-                          try {
-                            const nextBookings = await capNhatTrangThaiDatPhongApi(booking.id, TRANG_THAI_DAT_PHONG.CHECKED_OUT);
-                            setRemoteBookings(nextBookings);
-                          } catch (error) {
-                            setPaymentThongBao(error?.response?.data?.message || 'Không cập nhật trả phòng trên MySQL. Vui lòng kiểm tra backend/database.');
-                            return;
-                          }
-                          await refresh();
-                        }}
-                        className="min-h-12 w-full min-w-0 overflow-hidden rounded-xl border border-slate-300 bg-white px-4 py-3 text-center text-sm font-bold leading-5 text-slate-700 transition hover:border-brand-500 hover:text-brand-700 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                      >
-                        Đánh dấu trả phòng
-                      </button>
-                      <Link
-                        to={`/me?supportBooking=${booking.id}`}
-                        className="flex min-h-12 w-full min-w-0 items-center justify-center overflow-hidden rounded-xl border border-slate-300 bg-white px-4 py-3 text-center text-sm font-bold leading-5 text-slate-700 transition hover:border-brand-500 hover:text-brand-700"
-                      >
-                        Hỗ trợ / khiếu nại
-                      </Link>
                     </div>
 
                     {booking.latestCustomerFeedback ? (
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm">
+                      <div className="mt-4 rounded-xl bg-sky-50/50 p-4 text-sm">
                         <p className="font-black text-slate-950">Phản hồi gần nhất</p>
-                        <p className="mt-1 line-clamp-3 leading-6 text-slate-600">{booking.latestCustomerFeedback.content}</p>
+                        <p className="mt-1 line-clamp-2 leading-6 text-slate-600">{booking.latestCustomerFeedback.content}</p>
                       </div>
                     ) : null}
 
-                  </div>
+                    </div>
                 </article>
               );
             })}
           </div>
         ) : (
-          <div className="surface-card mt-8 p-8 text-center">
-            <p className="text-sm font-bold text-brand-700">Không có đơn phù hợp</p>
-            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Các đơn đang xử lý sẽ hiển thị tại đây.</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-500">
-              Đơn đã hủy hoặc đã trả phòng sẽ được chuyển sang tab Lịch sử để bạn xem lại.
-            </p>
-            <Link to="/rooms" className="mt-6 inline-flex rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white">
-              Tìm chỗ ở
-            </Link>
-          </div>
+          <MyBookingsEmpty />
         )}
-      </section>
+      </div>
+
+      {/* Modal QR Code Nhận phòng */}
+      {activeQrCodeToken ? (
+        <div 
+          className="fixed inset-0 z-[100] grid place-items-center bg-slate-950/80 px-4 backdrop-blur-sm transition-opacity"
+          onPointerDown={(e) => { if (e.target === e.currentTarget) setActiveQrCodeToken(null); }}
+        >
+          <div className="relative w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="bg-brand-600 p-6 text-center text-white">
+              <p className="text-xs font-black uppercase tracking-widest text-white/80">Thẻ lên phòng</p>
+              <h3 className="mt-2 text-xl font-black tracking-tight">Boarding Pass</h3>
+            </div>
+            <div className="p-8 text-center bg-white">
+              <div className="mx-auto grid h-48 w-48 place-items-center rounded-2xl bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.05)]">
+                <MyBookingsQrMock token={activeQrCodeToken} />
+              </div>
+              <p className="mt-6 text-xs font-bold text-slate-500 uppercase tracking-widest">Mã QR của bạn</p>
+              <p className="mt-1 break-all text-sm font-black text-slate-900">{activeQrCodeToken}</p>
+            </div>
+            <div className="bg-slate-50 p-4">
+              <button 
+                onClick={() => setActiveQrCodeToken(null)}
+                className="w-full rounded-xl bg-slate-950 px-4 py-3.5 text-sm font-black text-white shadow-sm transition hover:bg-slate-800"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

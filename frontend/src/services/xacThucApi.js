@@ -1,3 +1,4 @@
+// Chức năng: Hàm gọi API đăng nhập, đăng ký và xác minh.
 import ketNoiApi from './ketNoiApi';
 
 export async function dangKyTaiKhoan(payload) {

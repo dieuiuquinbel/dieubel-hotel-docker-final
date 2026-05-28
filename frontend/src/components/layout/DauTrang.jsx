@@ -1,4 +1,5 @@
-﻿import { useEffect, useRef, useState } from 'react';
+// Chức năng: Header và điều hướng chính cho trang khách hàng.
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import useKhoXacThuc from '../../store/khoXacThuc';
 import { taoDuongDanDangNhapChuyenHuong, taoDuongDanDangKyChuyenHuong } from '../../utils/duongDan';

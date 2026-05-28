@@ -1,3 +1,4 @@
+// Chức năng: Hook đọc kho voucher đã lưu của người dùng.
 import { useEffect, useState } from 'react';
 import { layKhoVoucherApi } from '../services/voucherApi';
 

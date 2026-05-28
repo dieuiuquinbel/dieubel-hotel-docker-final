@@ -1,3 +1,4 @@
+// Chức năng: Nghiệp vụ danh sách voucher và lưu voucher cho user.
 // Module voucher: danh sach ma uu dai, kho voucher cua user va luu voucher.
 const ketNoiDb = require('../../config/coSoDuLieu');
 const { damBaoCauTrucVanHanh } = require('../system/cauTrucVanHanh.service');

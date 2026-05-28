@@ -1,4 +1,5 @@
-﻿import { Link } from 'react-router-dom';
+// Chức năng: Banner mời khách đăng nhập hoặc tạo tài khoản.
+import { Link } from 'react-router-dom';
 import useKhoXacThuc from '../../store/khoXacThuc';
 
 function BangMoiThanhVien({ className = '' }) {

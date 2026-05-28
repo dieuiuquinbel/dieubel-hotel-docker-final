@@ -1,3 +1,4 @@
+// Chức năng: Đảm bảo các bảng/cột vận hành cần thiết tồn tại.
 // Module system: dam bao cac bang/cot mo rong ton tai truoc khi xu ly nghiep vu.
 const ketNoiDb = require('../../config/coSoDuLieu');
 

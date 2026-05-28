@@ -1,5 +1,6 @@
+// Chức năng: Các khối UI cho báo cáo doanh thu admin.
 // Các card và section nhỏ cho trang doanh thu admin.
-import { dinhDangNgay, dinhDangTien } from '../../../utils/dinhDang';
+import { dinhDangTien } from '../../../utils/dinhDang';
 
 export function RevenueStatCard({ label, value, tone = 'text-slate-950', hint }) {
   return (

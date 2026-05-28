@@ -1,5 +1,3 @@
-SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 -- Mo rong database DieuBel cho cac chuc nang frontend/admin dang co.
 -- Chay sau cac file 01 -> 05 trong MySQL Workbench.
 

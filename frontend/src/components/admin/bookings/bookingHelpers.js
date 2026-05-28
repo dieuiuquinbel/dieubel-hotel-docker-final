@@ -1,3 +1,4 @@
+// Chức năng: Chứa hàm phụ trợ xử lý trạng thái và nhãn đặt phòng admin.
 // Helper nghiệp vụ cho màn quản lý đặt phòng.
 // Các hàm ở đây giúp tách điều kiện lọc/nhãn ra khỏi file trang để dễ đọc và dễ test hơn.
 import {

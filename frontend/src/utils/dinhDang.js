@@ -1,3 +1,4 @@
+// Chức năng: Hàm định dạng tiền, ngày và ngày giờ.
 export function dinhDangTien(value) {
   return Number(value || 0).toLocaleString('vi-VN', {
     style: 'currency',

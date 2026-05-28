@@ -1,8 +1,9 @@
-// Module tao dat phong: giu ton kho, tao booking, hoa don va email xac nhan.
-const ketNoiDb = require('../../config/coSoDuLieu');
-const { layPhongTheoId } = require('../rooms/phong.service');
-const { taoFileHoaDon, dinhDangTien } = require('../invoices/hoaDon.service');
-const { guiMail } = require('../notifications/thuDienTu.service');
+// Chức năng: Nghiệp vụ tạo đơn đặt phòng, giữ tồn kho và tạo hóa đơn.
+//  Tạo đơn đặt phòng, khóa MySQL, hóa đơn
+const ketNoiDb = require("../../config/coSoDuLieu");
+const { layPhongTheoId } = require("../rooms/phong.service");
+const { taoFileHoaDon, dinhDangTien } = require("../invoices/hoaDon.service");
+const { guiMail } = require("../notifications/thuDienTu.service");
 
 function taoLoi(status, message) {
   const error = new Error(message);
@@ -19,8 +20,28 @@ function tinhSoDem(checkIn, checkOut) {
   return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
-function taoMaDatPhong() {
-  return `SN-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Date.now()).slice(-6)}`;
+async function sinhMaDatPhongDuyNhat(connection) {
+  const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Removed easily confused characters: O, 0, I, 1, L
+  let isUnique = false;
+  let code = "";
+  
+  while (!isUnique) {
+    let randomPart = "";
+    for (let i = 0; i < 5; i++) {
+      randomPart += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    code = `DB-${randomPart}`;
+    
+    // Check if code already exists in bookings table
+    const [rows] = await connection.query(
+      "SELECT id FROM bookings WHERE booking_code = ? LIMIT 1",
+      [code]
+    );
+    if (rows.length === 0) {
+      isUnique = true;
+    }
+  }
+  return code;
 }
 
 function chuanHoaDichVu(services = []) {
@@ -28,7 +49,7 @@ function chuanHoaDichVu(services = []) {
 
   return services
     .map((service) => ({
-      title: String(service.title || service.service_name || '').trim(),
+      title: String(service.title || service.service_name || "").trim(),
       price: Number(service.price ?? service.priceValue ?? 0),
       quantity: Math.max(Number(service.quantity || 1), 1),
     }))
@@ -36,40 +57,50 @@ function chuanHoaDichVu(services = []) {
 }
 
 function dichVuThanhChu(services) {
-  if (!services.length) return 'Khong co';
+  if (!services.length) return "Khong co";
 
   return services
-    .map((service) => `${service.title} x${service.quantity} (${dinhDangTien(service.price * service.quantity)})`)
-    .join(', ');
+    .map(
+      (service) =>
+        `${service.title} x${service.quantity} (${dinhDangTien(service.price * service.quantity)})`,
+    )
+    .join(", ");
 }
 
 async function taoDatPhong({ user, payload }) {
   if (!user?.email_verified) {
-    throw taoLoi(403, 'Vui long xac minh email truoc khi dat phong.');
+    throw taoLoi(403, "Vui long xac minh email truoc khi dat phong.");
   }
 
   const room = await layPhongTheoId(payload.roomId);
 
   if (!room) {
-    throw taoLoi(404, 'Khong tim thay phong.');
+    throw taoLoi(404, "Khong tim thay phong.");
   }
 
   const checkIn = payload.checkIn || payload.check_in_date;
   const checkOut = payload.checkOut || payload.check_out_date;
   const guests = Math.max(Number(payload.guests || 1), 1);
-  const roomsCount = Math.max(Number(payload.rooms || payload.roomsCount || 1), 1);
+  const roomsCount = Math.max(
+    Number(payload.rooms || payload.roomsCount || 1),
+    1,
+  );
   const nights = tinhSoDem(checkIn, checkOut);
   const selectedServices = chuanHoaDichVu(payload.services);
-  const servicePrice = selectedServices.reduce((sum, service) => sum + service.price * service.quantity, 0);
+  const servicePrice = selectedServices.reduce(
+    (sum, service) => sum + service.price * service.quantity,
+    0,
+  );
   const roomPrice = Number(room.price_per_night || 0) * nights * roomsCount;
   const totalPrice = roomPrice + servicePrice;
-  const bookingCode = taoMaDatPhong();
   const servicesText = dichVuThanhChu(selectedServices);
 
   const connection = await ketNoiDb.getConnection();
 
   try {
     await connection.beginTransaction();
+
+    const bookingCode = await sinhMaDatPhongDuyNhat(connection);
 
     const [lockedRooms] = await connection.query(
       `SELECT id, inventory_count
@@ -80,16 +111,19 @@ async function taoDatPhong({ user, payload }) {
     );
 
     if (!lockedRooms.length) {
-      throw taoLoi(404, 'Khong tim thay phong dang hoat dong.');
+      throw taoLoi(404, "Khong tim thay phong dang hoat dong.");
     }
 
     const currentInventory = Number(lockedRooms[0].inventory_count || 0);
     if (currentInventory < roomsCount) {
-      throw taoLoi(409, `Chi con ${currentInventory} phong trong MySQL, khong du de giu ${roomsCount} phong.`);
+      throw taoLoi(
+        409,
+        `Chi con ${currentInventory} phong trong MySQL, khong du de giu ${roomsCount} phong.`,
+      );
     }
 
     await connection.query(
-      'UPDATE rooms SET inventory_count = inventory_count - ? WHERE id = ?',
+      "UPDATE rooms SET inventory_count = inventory_count - ? WHERE id = ?",
       [roomsCount, room.id],
     );
 
@@ -131,7 +165,7 @@ async function taoDatPhong({ user, payload }) {
         Math.ceil(totalPrice * 0.1),
         totalPrice,
         totalPrice,
-        payload.paymentMethod || 'pay_at_hotel',
+        payload.paymentMethod || "pay_at_hotel",
         servicesText,
       ],
     );
@@ -152,7 +186,7 @@ async function taoDatPhong({ user, payload }) {
       deposit_amount: Math.ceil(totalPrice * 0.1),
       paid_amount: 0,
       remaining_amount: totalPrice,
-      payment_method: payload.paymentMethod || 'pay_at_hotel',
+      payment_method: payload.paymentMethod || "pay_at_hotel",
     };
 
     const invoice = await taoFileHoaDon({
@@ -183,8 +217,11 @@ async function taoDatPhong({ user, payload }) {
         invoiceCode: invoice.invoiceCode,
       });
     } catch (emailError) {
-      emailWarning = 'Da tao don dat phong nhung khong gui duoc email xac nhan.';
-      console.warn(`Khong the gui email xac nhan ${booking.booking_code}: ${emailError.message}`);
+      emailWarning =
+        "Da tao don dat phong nhung khong gui duoc email xac nhan.";
+      console.warn(
+        `Khong the gui email xac nhan ${booking.booking_code}: ${emailError.message}`,
+      );
     }
 
     return {
@@ -201,26 +238,92 @@ async function taoDatPhong({ user, payload }) {
   }
 }
 
-async function guiEmailXacNhanDatPhong({ user, room, booking, servicesText, invoicePath, invoiceCode }) {
+async function guiEmailXacNhanDatPhong({
+  user,
+  room,
+  booking,
+  servicesText,
+  invoicePath,
+  invoiceCode,
+}) {
   await guiMail({
     to: user.email,
-    subject: `Xac nhan dat phong StayNest - ${booking.booking_code}`,
-    html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a">
-        <h2>Dat phong thanh cong</h2>
-        <p>Ma dat phong: <strong>${booking.booking_code}</strong></p>
-        <p>Khach san: <strong>${room.hotel_name}</strong></p>
-        <p>Phong: <strong>${room.room_name}</strong></p>
-        <p>Loai phong: <strong>${room.room_type}</strong></p>
-        <p>Ngay nhan phong: <strong>${booking.check_in_date}</strong></p>
-        <p>Ngay tra phong: <strong>${booking.check_out_date}</strong></p>
-        <p>So khach: <strong>${booking.guests}</strong> - So phong: <strong>${booking.rooms_count}</strong></p>
-        <p>Dich vu da dat: <strong>${servicesText}</strong></p>
-        <p>Tong tien: <strong>${dinhDangTien(booking.total_price)}</strong></p>
-        <p>Hoa don: <strong>${invoiceCode}</strong></p>
-      </div>
-    `,
-    text: `Dat phong thanh cong ${booking.booking_code}. Tong tien ${dinhDangTien(booking.total_price)}.`,
+    subject: `Xác nhận đặt phòng StayNest - ${booking.booking_code}`,
+    html: `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Xác nhận đặt phòng StayNest - ${booking.booking_code}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05); border: 1px solid #e2e8f0;">
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); padding: 30px; color: #ffffff; text-align: center;">
+      <h1 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 0.5px;">StayNest</h1>
+      <p style="margin: 5px 0 0 0; font-size: 14px; color: #93c5fd;">Đặt phòng thành công!</p>
+    </div>
+    
+    <!-- Content -->
+    <div style="padding: 35px;">
+      <h2 style="color: #0f172a; font-size: 20px; font-weight: 700; margin: 0 0 15px 0; text-align: center;">Thông Tin Xác Nhận</h2>
+      <p style="color: #475569; font-size: 14px; line-height: 1.6; text-align: center; margin-bottom: 30px;">
+        Chào bạn, đơn đặt phòng của bạn tại <strong>StayNest</strong> đã được ghi nhận thành công. Dưới đây là chi tiết đặt phòng của bạn:
+      </p>
+      
+      <!-- Details Table -->
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 0; font-size: 14px; color: #64748b; font-weight: 600;">Mã đặt phòng</td>
+          <td style="padding: 12px 0; font-size: 14px; color: #0f172a; font-weight: 700; text-align: right;">${booking.booking_code}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 0; font-size: 14px; color: #64748b; font-weight: 600;">Khách sạn</td>
+          <td style="padding: 12px 0; font-size: 14px; color: #0f172a; font-weight: 700; text-align: right;">DieuBel</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 0; font-size: 14px; color: #64748b; font-weight: 600;">Tên phòng</td>
+          <td style="padding: 12px 0; font-size: 14px; color: #0f172a; font-weight: 600; text-align: right;">${room.room_name}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 0; font-size: 14px; color: #64748b; font-weight: 600;">Loại phòng</td>
+          <td style="padding: 12px 0; font-size: 14px; color: #0f172a; font-weight: 600; text-align: right;">${room.room_type}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 0; font-size: 14px; color: #64748b; font-weight: 600;">Ngày nhận phòng</td>
+          <td style="padding: 12px 0; font-size: 14px; color: #0f172a; font-weight: 600; text-align: right;">${booking.check_in_date}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 0; font-size: 14px; color: #64748b; font-weight: 600;">Ngày trả phòng</td>
+          <td style="padding: 12px 0; font-size: 14px; color: #0f172a; font-weight: 600; text-align: right;">${booking.check_out_date}</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 0; font-size: 14px; color: #64748b; font-weight: 600;">Số lượng đặt</td>
+          <td style="padding: 12px 0; font-size: 14px; color: #0f172a; font-weight: 600; text-align: right;">${booking.guests} khách / ${booking.rooms_count} phòng</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+          <td style="padding: 12px 0; font-size: 14px; color: #64748b; font-weight: 600;">Dịch vụ đã đặt</td>
+          <td style="padding: 12px 0; font-size: 14px; color: #0f172a; font-weight: 600; text-align: right;">${servicesText || 'Không có'}</td>
+        </tr>
+        <tr>
+          <td style="padding: 16px 0 0 0; font-size: 16px; color: #0f172a; font-weight: 700;">Tổng số tiền</td>
+          <td style="padding: 16px 0 0 0; font-size: 20px; color: #1e40af; font-weight: 800; text-align: right;">${dinhDangTien(booking.total_price)}</td>
+        </tr>
+      </table>
+      
+      <p style="color: #64748b; font-size: 13px; line-height: 1.5; text-align: center; margin: 0;">
+        Hóa đơn điện tử chi tiết <strong>${invoiceCode}</strong> đã được gửi đính kèm dưới dạng file HTML trong email này.
+      </p>
+    </div>
+    
+    <!-- Footer -->
+    <div style="background-color: #f8fafc; padding: 25px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8;">
+      Cảm ơn quý khách đã tin tưởng và đặt phòng tại <strong>DieuBel</strong>!<br />
+      © 2026 StayNest Hotel Group. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>`,
+    text: `Đặt phòng thành công ${booking.booking_code}. Khách sạn: DieuBel. Tổng tiền ${dinhDangTien(booking.total_price)}.`,
     attachments: [
       {
         filename: `${invoiceCode}.html`,

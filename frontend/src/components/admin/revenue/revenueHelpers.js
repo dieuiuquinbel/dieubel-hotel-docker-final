@@ -1,3 +1,4 @@
+// Chức năng: Hàm tạo khoảng ngày và phân tích doanh thu.
 // Helper xử lý mốc thời gian và dữ liệu biểu diễn cho trang doanh thu.
 export function ymdToday() {
   const now = new Date();

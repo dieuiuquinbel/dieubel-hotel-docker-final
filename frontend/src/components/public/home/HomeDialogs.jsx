@@ -1,3 +1,4 @@
+// Chức năng: Các hộp thoại trên trang chủ.
 // Hai popup dùng riêng cho trang chủ: mời đăng nhập và kho voucher.
 import { TheVoucher } from './HomeVoucherCard';
 

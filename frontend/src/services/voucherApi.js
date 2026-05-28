@@ -1,3 +1,4 @@
+// Chức năng: Hàm gọi API voucher.
 import ketNoiApi from './ketNoiApi';
 
 export async function layDanhSachVoucherApi() {

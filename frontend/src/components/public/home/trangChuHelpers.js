@@ -1,3 +1,4 @@
+// Chức năng: Hàm phụ trợ xử lý dữ liệu trang chủ.
 // Helper nhỏ cho trang chủ.
 export function ganThamSoTimKiem(params, form) {
   Object.entries(form).forEach(([key, value]) => {

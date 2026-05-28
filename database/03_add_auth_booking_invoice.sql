@@ -1,5 +1,3 @@
-SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 USE hotel_booking_db;
 
 DROP PROCEDURE IF EXISTS add_column_if_missing;

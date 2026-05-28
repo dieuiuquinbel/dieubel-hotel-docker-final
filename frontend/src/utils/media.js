@@ -1,3 +1,4 @@
+// Chức năng: Tiện ích chuẩn hóa URL ảnh/media từ backend.
 export function resolveMediaUrl(path) {
   if (!path) return '';
   if (/^https?:\/\//i.test(path) || path.startsWith('data:') || path.startsWith('blob:')) {

@@ -1,6 +1,3 @@
-SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
-ALTER DATABASE hotel_booking_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 CREATE TABLE users (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     full_name VARCHAR(120) NOT NULL,

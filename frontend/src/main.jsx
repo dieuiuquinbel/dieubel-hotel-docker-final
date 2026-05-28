@@ -1,3 +1,4 @@
+// Chức năng: Khởi tạo React app, router và React Query provider.
 // Điểm vào của frontend.
 // File này gắn React vào DOM, cấu hình React Query và bọc Router cho toàn bộ ứng dụng.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

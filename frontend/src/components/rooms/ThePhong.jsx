@@ -1,4 +1,5 @@
-﻿import { useState } from 'react';
+// Chức năng: Card hiển thị thông tin phòng/khách sạn.
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useKhoXacThuc from '../../store/khoXacThuc';
 import { dinhDangTien } from '../../utils/dinhDang';
@@ -92,6 +93,14 @@ function ThePhong({ room, layout = 'horizontal' }) {
     }
   };
 
+  const openBooking = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (canBook) {
+      navigate(bookingPath);
+    }
+  };
+
   if (layout === 'vertical') {
     return (
       <article
@@ -130,18 +139,23 @@ function ThePhong({ room, layout = 'horizontal' }) {
           <TheTienNghi room={room} amenities={amenities} />
 
           <div className="mt-auto flex items-end justify-between gap-3 pt-5">
-            <div>
+            <div className="text-right">
               <p className="text-xs font-normal text-[#6a6a6a]">Giá mỗi đêm</p>
-              <p className="mt-1 text-lg font-semibold text-[#222222]">{dinhDangTien(room.price_per_night)}</p>
+              <div className="mt-1 flex flex-col items-end">
+                <p className="text-xs font-medium text-red-500 line-through">
+                  {dinhDangTien(room.price_per_night * 1.3)}
+                </p>
+                <p className="text-lg font-semibold text-[#222222]">{dinhDangTien(room.price_per_night)}</p>
+              </div>
               <p className="text-xs text-[#6a6a6a]">Tối đa {room.max_guests || 2} khách</p>
             </div>
-            <Link
-              to={detailPath}
-              onClick={(event) => event.stopPropagation()}
+            <button
+              type="button"
+              onClick={openBooking}
               className="rounded-lg bg-brand-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-brand-700"
             >
-              Xem chi tiết
-            </Link>
+              Chọn phòng
+            </button>
           </div>
         </div>
       </article>
@@ -198,29 +212,28 @@ function ThePhong({ room, layout = 'horizontal' }) {
           </div>
           <div className="text-right lg:mt-5 lg:text-left">
             <p className="text-xs font-normal text-[#6a6a6a]">Giá mỗi đêm</p>
-            <p className="mt-1 text-xl font-semibold tracking-normal text-[#222222]">{dinhDangTien(room.price_per_night)}</p>
+            <div className="mt-1 flex flex-col items-end lg:items-start">
+              <p className="text-sm font-medium text-red-500 line-through">
+                {dinhDangTien(room.price_per_night * 1.3)}
+              </p>
+              <p className="text-xl font-semibold tracking-normal text-[#222222]">{dinhDangTien(room.price_per_night)}</p>
+            </div>
             <p className="mt-1 text-sm text-[#6a6a6a]">Tối đa {room.max_guests || 2} khách</p>
           </div>
         </div>
 
         <div className="mt-5 grid gap-3">
           <p className={`text-sm font-semibold leading-6 ${availability.textClass}`}>{availability.description(room.inventory_count)}</p>
-          <Link
-            to={detailPath}
-            onClick={(event) => event.stopPropagation()}
-            className="rounded-lg border border-[#222222] bg-white px-4 py-3 text-center text-sm font-medium text-[#222222] transition hover:bg-[#f7f7f7]"
-          >
-            Xem chi tiết
-          </Link>
-          <Link
-            to={canBook ? bookingPath : `/rooms/${room.id}`}
-            onClick={(event) => event.stopPropagation()}
+          <button
+            type="button"
+            onClick={openBooking}
+            disabled={!canBook}
             className={`rounded-lg px-4 py-3 text-center text-sm font-medium text-white transition ${
               canBook ? 'bg-brand-600 hover:bg-brand-700' : 'cursor-not-allowed bg-[#ffd1da]'
             }`}
           >
-            {canBook ? (token ? 'Đặt ngay' : 'Đăng nhập đặt') : 'Hết phòng'}
-          </Link>
+            {canBook ? 'Chọn phòng' : 'Hết phòng'}
+          </button>
         </div>
       </div>
     </article>

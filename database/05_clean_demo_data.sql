@@ -1,8 +1,6 @@
 -- Reset lịch sử giao dịch demo và làm mới dữ liệu phòng.
 -- Chạy file này sau các file schema/seed ban đầu.
 
-SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE booking_services;
 TRUNCATE TABLE invoices;

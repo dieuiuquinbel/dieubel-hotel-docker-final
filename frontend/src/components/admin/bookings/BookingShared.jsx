@@ -1,3 +1,4 @@
+// Chức năng: Chứa component nhỏ dùng chung cho màn quản lý đặt phòng.
 // Các khối giao diện dùng chung cho màn đặt phòng.
 // Tách riêng để file trang chỉ còn điều phối dữ liệu và sự kiện.
 export function BadgeDatPhong({ tone, children }) {
